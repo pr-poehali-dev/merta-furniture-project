@@ -92,12 +92,17 @@ export default function Index() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
 
-  // Calculator
+  // Calculator — step-by-step
+  const [calcStep, setCalcStep] = useState(0);
+  const [calcType, setCalcType] = useState("");
+  const [calcStyle, setCalcStyle] = useState("");
+  const [calcMaterial, setCalcMaterial] = useState("");
+  const [calcFacade, setCalcFacade] = useState("");
   const [calcWidth, setCalcWidth] = useState(200);
   const [calcHeight, setCalcHeight] = useState(220);
   const [calcDepth, setCalcDepth] = useState(60);
-  const [calcMaterial, setCalcMaterial] = useState("МДФ");
-  const [calcType, setCalcType] = useState("Кухня");
+  const [calcExtras, setCalcExtras] = useState<string[]>([]);
+  const [calcDone, setCalcDone] = useState(false);
 
   const navLinks = [
     { href: "#home", label: "Главная" },
@@ -136,21 +141,180 @@ export default function Index() {
   const cartTotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
-  const calcPrice = () => {
-    const area = (calcWidth * calcHeight) / 10000;
-    const materialCoef =
-      calcMaterial === "Массив" ? 3.2 : calcMaterial === "МДФ" ? 2.0 : 1.5;
-    const typeCoef =
-      calcType === "Кухня"
-        ? 1.4
-        : calcType === "Шкаф"
-        ? 1.0
-        : calcType === "Спальня"
-        ? 1.2
-        : 1.1;
-    const depthCoef = calcDepth > 60 ? 1.15 : 1.0;
-    return Math.round(area * materialCoef * typeCoef * depthCoef * 85000);
+  // Calculator config
+  const CALC_TYPES = [
+    { id: "kitchen", label: "Кухня", icon: "ChefHat", base: 95000 },
+    { id: "wardrobe", label: "Шкаф-купе", icon: "Package", base: 55000 },
+    { id: "bedroom", label: "Спальня", icon: "Bed", base: 85000 },
+    { id: "sofa", label: "Диван", icon: "Sofa", base: 65000 },
+    { id: "hallway", label: "Прихожая", icon: "DoorOpen", base: 45000 },
+    { id: "office", label: "Кабинет", icon: "Monitor", base: 70000 },
+    { id: "bathroom", label: "Тумба в ванную", icon: "Droplets", base: 25000 },
+    { id: "childroom", label: "Детская", icon: "Star", base: 80000 },
+  ];
+  const CALC_STYLES: Record<string, { id: string; label: string; coef: number }[]> = {
+    kitchen: [
+      { id: "modern", label: "Современный", coef: 1.0 },
+      { id: "classic", label: "Классический", coef: 1.15 },
+      { id: "loft", label: "Лофт", coef: 1.1 },
+      { id: "minimalism", label: "Минимализм", coef: 0.95 },
+      { id: "scandinavian", label: "Скандинавский", coef: 1.05 },
+    ],
+    wardrobe: [
+      { id: "sliding", label: "Раздвижной", coef: 1.0 },
+      { id: "swing", label: "Распашной", coef: 0.9 },
+      { id: "corner", label: "Угловой", coef: 1.25 },
+      { id: "builtin", label: "Встроенный", coef: 1.1 },
+    ],
+    bedroom: [
+      { id: "modern", label: "Современный", coef: 1.0 },
+      { id: "classic", label: "Классический", coef: 1.2 },
+      { id: "minimalism", label: "Минимализм", coef: 0.95 },
+      { id: "provence", label: "Прованс", coef: 1.15 },
+    ],
+    sofa: [
+      { id: "straight", label: "Прямой", coef: 1.0 },
+      { id: "corner", label: "Угловой", coef: 1.3 },
+      { id: "modular", label: "Модульный", coef: 1.4 },
+      { id: "ottoman", label: "С оттоманкой", coef: 1.15 },
+    ],
+    hallway: [
+      { id: "modern", label: "Современный", coef: 1.0 },
+      { id: "classic", label: "Классический", coef: 1.1 },
+      { id: "compact", label: "Компактный", coef: 0.85 },
+    ],
+    office: [
+      { id: "executive", label: "Руководитель", coef: 1.2 },
+      { id: "home", label: "Домашний", coef: 1.0 },
+      { id: "open", label: "Open space", coef: 1.1 },
+    ],
+    bathroom: [
+      { id: "pedestal", label: "Напольная", coef: 1.0 },
+      { id: "hanging", label: "Подвесная", coef: 1.1 },
+      { id: "corner", label: "Угловая", coef: 1.15 },
+    ],
+    childroom: [
+      { id: "baby", label: "Малыш (0–3)", coef: 0.9 },
+      { id: "junior", label: "Школьник (4–12)", coef: 1.0 },
+      { id: "teen", label: "Подросток (13+)", coef: 1.05 },
+      { id: "bunk", label: "Двухъярусная", coef: 1.2 },
+    ],
   };
+  const CALC_MATERIALS = [
+    { id: "ldsp", label: "ЛДСП", desc: "Бюджетно и практично", coef: 1.0 },
+    { id: "mdf", label: "МДФ", desc: "Оптимальное качество", coef: 1.45 },
+    { id: "massiv", label: "Массив дерева", desc: "Премиум, долговечность", coef: 2.4 },
+    { id: "mdf_kraska", label: "МДФ + Эмаль", desc: "Глянцевое покрытие", coef: 1.7 },
+  ];
+  const CALC_FACADES: Record<string, { id: string; label: string; coef: number }[]> = {
+    kitchen: [
+      { id: "glossy", label: "Глянец", coef: 1.2 },
+      { id: "matte", label: "Матовый", coef: 1.1 },
+      { id: "wood", label: "Под дерево", coef: 1.15 },
+      { id: "texture", label: "Текстурный", coef: 1.25 },
+      { id: "glass", label: "Со стеклом", coef: 1.35 },
+    ],
+    wardrobe: [
+      { id: "mirror", label: "Зеркальный", coef: 1.3 },
+      { id: "glossy", label: "Глянец", coef: 1.2 },
+      { id: "matte", label: "Матовый", coef: 1.0 },
+      { id: "wood", label: "Под дерево", coef: 1.1 },
+    ],
+    bedroom: [
+      { id: "matte", label: "Матовый", coef: 1.0 },
+      { id: "glossy", label: "Глянец", coef: 1.15 },
+      { id: "wood", label: "Под дерево", coef: 1.1 },
+    ],
+    sofa: [
+      { id: "fabric", label: "Ткань", coef: 1.0 },
+      { id: "velvet", label: "Велюр", coef: 1.2 },
+      { id: "leather", label: "Экокожа", coef: 1.35 },
+      { id: "chenille", label: "Шенилл", coef: 1.15 },
+    ],
+  };
+  const EXTRAS_BY_TYPE: Record<string, { id: string; label: string; price: number }[]> = {
+    kitchen: [
+      { id: "sink", label: "Мойка встроенная", price: 12000 },
+      { id: "island", label: "Кухонный остров", price: 35000 },
+      { id: "light", label: "Подсветка LED", price: 8000 },
+      { id: "soft", label: "Доводчики", price: 5000 },
+      { id: "waste", label: "Ящик для мусора", price: 3500 },
+      { id: "column", label: "Колонна-пенал", price: 18000 },
+    ],
+    wardrobe: [
+      { id: "mirror", label: "Зеркало внутри", price: 7000 },
+      { id: "light", label: "Подсветка", price: 5000 },
+      { id: "trouser", label: "Брючница", price: 3000 },
+      { id: "safe", label: "Встроенный сейф", price: 12000 },
+    ],
+    bedroom: [
+      { id: "dresser", label: "Комод", price: 22000 },
+      { id: "nightstand", label: "Тумбочки (2 шт)", price: 14000 },
+      { id: "mirror", label: "Зеркало", price: 8000 },
+      { id: "light", label: "Подсветка изголовья", price: 6000 },
+    ],
+    sofa: [
+      { id: "storage", label: "Ящик для белья", price: 5000 },
+      { id: "mechanism", label: "Механизм раскладки", price: 8000 },
+      { id: "armrests", label: "Регул. подлокотники", price: 6000 },
+    ],
+    hallway: [
+      { id: "mirror", label: "Зеркало", price: 7000 },
+      { id: "shoe", label: "Тумба для обуви", price: 12000 },
+      { id: "hooks", label: "Крючки и вешалки", price: 2500 },
+    ],
+    office: [
+      { id: "monitor", label: "Подставка под монитор", price: 4000 },
+      { id: "bookcase", label: "Книжный шкаф", price: 18000 },
+      { id: "safe", label: "Сейф встроенный", price: 14000 },
+    ],
+    bathroom: [
+      { id: "mirror", label: "Зеркало-шкаф", price: 9000 },
+      { id: "shelf", label: "Полка над раковиной", price: 3500 },
+    ],
+    childroom: [
+      { id: "desk", label: "Письменный стол", price: 16000 },
+      { id: "shelf", label: "Полка-стеллаж", price: 8000 },
+      { id: "light", label: "Ночник встроенный", price: 4000 },
+      { id: "board", label: "Магнитная доска", price: 5500 },
+    ],
+  };
+
+  const calcTypeObj = CALC_TYPES.find((t) => t.id === calcType);
+  const calcStyleObj = (CALC_STYLES[calcType] || CALC_STYLES.kitchen)?.find((s) => s.id === calcStyle);
+  const calcMaterialObj = CALC_MATERIALS.find((m) => m.id === calcMaterial);
+  const calcFacadeObj = (CALC_FACADES[calcType] || CALC_FACADES.kitchen)?.find((f) => f.id === calcFacade);
+  const availableExtras = EXTRAS_BY_TYPE[calcType] || [];
+  const hasFacadeStep = !!CALC_FACADES[calcType];
+
+  const TOTAL_STEPS = hasFacadeStep ? 5 : 4; // type, style, material, [facade], sizes
+
+  const calcPrice = () => {
+    if (!calcTypeObj) return 0;
+    const base = calcTypeObj.base;
+    const area = (calcWidth * calcHeight) / 10000;
+    const styleCoef = calcStyleObj?.coef ?? 1.0;
+    const matCoef = calcMaterialObj?.coef ?? 1.0;
+    const facadeCoef = calcFacadeObj?.coef ?? 1.0;
+    const depthCoef = calcDepth > 65 ? 1.12 : 1.0;
+    const extrasTotal = calcExtras.reduce((sum, eid) => {
+      const e = availableExtras.find((x) => x.id === eid);
+      return sum + (e?.price ?? 0);
+    }, 0);
+    return Math.round(base + area * styleCoef * matCoef * facadeCoef * depthCoef * 78000 + extrasTotal);
+  };
+
+  const toggleExtra = (id: string) =>
+    setCalcExtras((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+
+  const calcReset = () => {
+    setCalcStep(0); setCalcType(""); setCalcStyle(""); setCalcMaterial("");
+    setCalcFacade(""); setCalcWidth(200); setCalcHeight(220); setCalcDepth(60);
+    setCalcExtras([]); setCalcDone(false);
+  };
+
+  // Step labels
+  const stepLabels = ["Тип мебели", "Стиль", "Материал", ...(hasFacadeStep ? ["Фасад"] : []), "Размеры и опции"];
 
   const formatPrice = (n: number) =>
     n.toLocaleString("ru-RU", {
@@ -433,110 +597,314 @@ export default function Index() {
       </section>
 
       {/* ── CALCULATOR ── */}
-      <section id="calculator" className="py-24 max-w-7xl mx-auto px-5 md:px-10">
-        <div className="mb-14">
-          <p className="text-[10px] tracking-[0.3em] uppercase text-[#999] mb-3">Онлайн-расчёт</p>
-          <h2 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-light">Калькулятор цены</h2>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div className="space-y-8">
-            {/* Type */}
-            <div>
-              <p className="text-[11px] tracking-widest uppercase mb-3 font-semibold">Тип мебели</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {["Кухня", "Шкаф", "Спальня", "Диван"].map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setCalcType(t)}
-                    className={`py-2.5 text-[11px] tracking-wider border transition-colors ${
-                      calcType === t ? "bg-[#111] text-white border-[#111]" : "border-[#ddd] hover:border-[#111]"
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Material */}
-            <div>
-              <p className="text-[11px] tracking-widest uppercase mb-3 font-semibold">Материал</p>
-              <div className="grid grid-cols-3 gap-2">
-                {["МДФ", "ЛДСП", "Массив"].map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setCalcMaterial(m)}
-                    className={`py-2.5 text-[11px] tracking-wider border transition-colors ${
-                      calcMaterial === m ? "bg-[#111] text-white border-[#111]" : "border-[#ddd] hover:border-[#111]"
-                    }`}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Width */}
-            <div>
-              <div className="flex justify-between mb-2">
-                <p className="text-[11px] tracking-widest uppercase font-semibold">Ширина</p>
-                <span className="text-sm text-[#555]">{calcWidth} см</span>
-              </div>
-              <input type="range" min={60} max={400} step={10} value={calcWidth} onChange={(e) => setCalcWidth(Number(e.target.value))} />
-              <div className="flex justify-between text-[10px] text-[#bbb] mt-1"><span>60 см</span><span>400 см</span></div>
-            </div>
-
-            {/* Height */}
-            <div>
-              <div className="flex justify-between mb-2">
-                <p className="text-[11px] tracking-widest uppercase font-semibold">Высота</p>
-                <span className="text-sm text-[#555]">{calcHeight} см</span>
-              </div>
-              <input type="range" min={60} max={280} step={5} value={calcHeight} onChange={(e) => setCalcHeight(Number(e.target.value))} />
-              <div className="flex justify-between text-[10px] text-[#bbb] mt-1"><span>60 см</span><span>280 см</span></div>
-            </div>
-
-            {/* Depth */}
-            <div>
-              <div className="flex justify-between mb-2">
-                <p className="text-[11px] tracking-widest uppercase font-semibold">Глубина</p>
-                <span className="text-sm text-[#555]">{calcDepth} см</span>
-              </div>
-              <input type="range" min={30} max={90} step={5} value={calcDepth} onChange={(e) => setCalcDepth(Number(e.target.value))} />
-              <div className="flex justify-between text-[10px] text-[#bbb] mt-1"><span>30 см</span><span>90 см</span></div>
-            </div>
+      <section id="calculator" className="py-24 bg-[#f9f9f7]">
+        <div className="max-w-7xl mx-auto px-5 md:px-10">
+          <div className="mb-12">
+            <p className="text-[10px] tracking-[0.3em] uppercase text-[#999] mb-3">Онлайн-расчёт</p>
+            <h2 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-light">Калькулятор цены</h2>
           </div>
 
-          {/* Result */}
-          <div className="flex flex-col">
-            <div className="bg-[#111] text-white p-8 md:p-12 flex-1 flex flex-col justify-between min-h-[420px]">
-              <div>
-                <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-4">Ориентировочная стоимость</p>
-                <div className="font-display text-5xl md:text-6xl font-light leading-none">
+          {!calcDone ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left: steps form */}
+              <div className="lg:col-span-2">
+                {/* Progress bar */}
+                <div className="flex items-center gap-0 mb-10 overflow-x-auto pb-2">
+                  {stepLabels.map((label, i) => (
+                    <div key={i} className="flex items-center flex-shrink-0">
+                      <button
+                        onClick={() => i < calcStep && setCalcStep(i)}
+                        className={`flex items-center gap-2 transition-colors ${i < calcStep ? "cursor-pointer" : "cursor-default"}`}
+                      >
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold border-2 transition-colors flex-shrink-0 ${
+                          i < calcStep ? "bg-[#111] border-[#111] text-white"
+                          : i === calcStep ? "border-[#111] text-[#111] bg-white"
+                          : "border-[#ddd] text-[#bbb] bg-white"
+                        }`}>
+                          {i < calcStep ? <Icon name="Check" size={12} /> : i + 1}
+                        </div>
+                        <span className={`text-[10px] tracking-wider uppercase whitespace-nowrap ${i === calcStep ? "text-[#111] font-semibold" : i < calcStep ? "text-[#555]" : "text-[#bbb]"}`}>
+                          {label}
+                        </span>
+                      </button>
+                      {i < stepLabels.length - 1 && (
+                        <div className={`w-8 md:w-12 h-px mx-2 flex-shrink-0 ${i < calcStep ? "bg-[#111]" : "bg-[#ddd]"}`} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* STEP 0 — тип мебели */}
+                {calcStep === 0 && (
+                  <div>
+                    <p className="text-sm text-[#555] mb-6">Выберите тип мебели, которую хотите заказать</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {CALC_TYPES.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => { setCalcType(t.id); setCalcStyle(""); setCalcFacade(""); setCalcStep(1); }}
+                          className={`flex flex-col items-center gap-3 p-4 border-2 transition-all duration-200 hover:border-[#111] group ${
+                            calcType === t.id ? "border-[#111] bg-[#111] text-white" : "border-[#e5e5e5] bg-white text-[#111]"
+                          }`}
+                        >
+                          <Icon name={t.icon} size={24} className={calcType === t.id ? "text-white" : "text-[#555] group-hover:text-[#111]"} fallback="Package" />
+                          <span className="text-[11px] tracking-wider uppercase font-semibold">{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 1 — стиль */}
+                {calcStep === 1 && (
+                  <div>
+                    <p className="text-sm text-[#555] mb-6">Выберите стиль для вашей {calcTypeObj?.label.toLowerCase()}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {(CALC_STYLES[calcType] || CALC_STYLES.kitchen).map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => { setCalcStyle(s.id); setCalcStep(2); }}
+                          className={`flex flex-col items-start p-5 border-2 transition-all duration-200 hover:border-[#111] text-left ${
+                            calcStyle === s.id ? "border-[#111] bg-[#111] text-white" : "border-[#e5e5e5] bg-white"
+                          }`}
+                        >
+                          <span className="text-[13px] font-semibold mb-1">{s.label}</span>
+                          <span className={`text-[10px] tracking-wider ${calcStyle === s.id ? "text-white/50" : "text-[#999]"}`}>
+                            коэф. {s.coef.toFixed(2)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={() => setCalcStep(0)} className="mt-6 flex items-center gap-2 text-[11px] tracking-widest uppercase text-[#999] hover:text-[#111] transition-colors">
+                      <Icon name="ArrowLeft" size={14} /> Назад
+                    </button>
+                  </div>
+                )}
+
+                {/* STEP 2 — материал */}
+                {calcStep === 2 && (
+                  <div>
+                    <p className="text-sm text-[#555] mb-6">Из какого материала изготовить корпус?</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {CALC_MATERIALS.map((m) => (
+                        <button
+                          key={m.id}
+                          onClick={() => { setCalcMaterial(m.id); setCalcStep(hasFacadeStep ? 3 : 3); }}
+                          className={`flex items-center justify-between p-5 border-2 transition-all duration-200 hover:border-[#111] text-left ${
+                            calcMaterial === m.id ? "border-[#111] bg-[#111] text-white" : "border-[#e5e5e5] bg-white"
+                          }`}
+                        >
+                          <div>
+                            <p className="text-[13px] font-semibold mb-0.5">{m.label}</p>
+                            <p className={`text-[11px] ${calcMaterial === m.id ? "text-white/50" : "text-[#999]"}`}>{m.desc}</p>
+                          </div>
+                          <div className={`w-8 h-8 rounded-full border flex items-center justify-center flex-shrink-0 ml-4 ${
+                            calcMaterial === m.id ? "border-white bg-white" : "border-[#ddd]"
+                          }`}>
+                            {calcMaterial === m.id && <Icon name="Check" size={14} className="text-[#111]" />}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={() => setCalcStep(1)} className="mt-6 flex items-center gap-2 text-[11px] tracking-widest uppercase text-[#999] hover:text-[#111] transition-colors">
+                      <Icon name="ArrowLeft" size={14} /> Назад
+                    </button>
+                  </div>
+                )}
+
+                {/* STEP 3 — фасад (если есть) */}
+                {calcStep === 3 && hasFacadeStep && (
+                  <div>
+                    <p className="text-sm text-[#555] mb-6">Выберите тип фасада</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {(CALC_FACADES[calcType] || []).map((f) => (
+                        <button
+                          key={f.id}
+                          onClick={() => { setCalcFacade(f.id); setCalcStep(4); }}
+                          className={`p-5 border-2 transition-all duration-200 hover:border-[#111] text-left ${
+                            calcFacade === f.id ? "border-[#111] bg-[#111] text-white" : "border-[#e5e5e5] bg-white"
+                          }`}
+                        >
+                          <p className="text-[13px] font-semibold">{f.label}</p>
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={() => setCalcStep(2)} className="mt-6 flex items-center gap-2 text-[11px] tracking-widest uppercase text-[#999] hover:text-[#111] transition-colors">
+                      <Icon name="ArrowLeft" size={14} /> Назад
+                    </button>
+                  </div>
+                )}
+
+                {/* STEP 3 or 4 — размеры и опции */}
+                {calcStep === (hasFacadeStep ? 4 : 3) && (
+                  <div className="space-y-7">
+                    <p className="text-sm text-[#555]">Укажите размеры и дополнительные опции</p>
+
+                    {/* Размеры */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      {[
+                        { label: "Ширина", value: calcWidth, set: setCalcWidth, min: 60, max: 400, step: 10, unit: "см" },
+                        { label: "Высота", value: calcHeight, set: setCalcHeight, min: 60, max: 280, step: 5, unit: "см" },
+                        { label: "Глубина", value: calcDepth, set: setCalcDepth, min: 30, max: 90, step: 5, unit: "см" },
+                      ].map(({ label, value, set, min, max, step, unit }) => (
+                        <div key={label} className="bg-white border border-[#e8e8e8] p-5">
+                          <div className="flex justify-between mb-3">
+                            <p className="text-[11px] tracking-widest uppercase font-semibold">{label}</p>
+                            <span className="text-sm font-semibold text-[#111]">{value} {unit}</span>
+                          </div>
+                          <input type="range" min={min} max={max} step={step} value={value}
+                            onChange={(e) => set(Number(e.target.value))} className="w-full" />
+                          <div className="flex justify-between text-[10px] text-[#bbb] mt-1">
+                            <span>{min} {unit}</span><span>{max} {unit}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Доп. опции */}
+                    {availableExtras.length > 0 && (
+                      <div>
+                        <p className="text-[11px] tracking-widest uppercase font-semibold mb-4">Дополнительные опции</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {availableExtras.map((e) => (
+                            <button
+                              key={e.id}
+                              onClick={() => toggleExtra(e.id)}
+                              className={`flex items-center justify-between p-4 border transition-colors text-left ${
+                                calcExtras.includes(e.id) ? "border-[#111] bg-[#111] text-white" : "border-[#e5e5e5] bg-white hover:border-[#111]"
+                              }`}
+                            >
+                              <span className="text-[12px]">{e.label}</span>
+                              <span className={`text-[11px] font-semibold ml-4 whitespace-nowrap ${calcExtras.includes(e.id) ? "text-white/70" : "text-[#555]"}`}>
+                                +{formatPrice(e.price)}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-3 pt-2">
+                      <button onClick={() => setCalcStep(hasFacadeStep ? 3 : 2)} className="flex items-center gap-2 text-[11px] tracking-widest uppercase text-[#999] hover:text-[#111] transition-colors">
+                        <Icon name="ArrowLeft" size={14} /> Назад
+                      </button>
+                      <button
+                        onClick={() => setCalcDone(true)}
+                        className="flex-1 bg-[#111] text-white py-3.5 text-[11px] tracking-widest uppercase hover:bg-[#333] transition-colors"
+                      >
+                        Рассчитать стоимость
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: live summary */}
+              <div className="bg-[#111] text-white p-8 self-start sticky top-20">
+                <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3">Предварительная стоимость</p>
+                <div className="font-display text-4xl font-light mb-1">
+                  {calcType ? formatPrice(calcPrice()) : "—"}
+                </div>
+                {calcType && <p className="text-white/30 text-[11px] mb-6">уточняется при замере</p>}
+
+                <div className="space-y-2.5 border-t border-white/10 pt-5">
+                  {[
+                    ["Тип", calcTypeObj?.label],
+                    ["Стиль", calcStyleObj?.label],
+                    ["Материал", calcMaterialObj?.label],
+                    ...(hasFacadeStep ? [["Фасад", calcFacadeObj?.label]] : []),
+                    calcType ? ["Размер", `${calcWidth}×${calcHeight}×${calcDepth} см`] : null,
+                  ].filter(Boolean).map(([label, value]) => value && (
+                    <div key={label} className="flex justify-between text-[12px]">
+                      <span className="text-white/40">{label}</span>
+                      <span>{value}</span>
+                    </div>
+                  ))}
+                  {calcExtras.length > 0 && (
+                    <div className="border-t border-white/10 pt-2.5 mt-2.5">
+                      <p className="text-white/40 text-[11px] mb-2">Опции:</p>
+                      {calcExtras.map((eid) => {
+                        const ex = availableExtras.find((x) => x.id === eid);
+                        return ex ? (
+                          <div key={eid} className="flex justify-between text-[11px] text-white/60">
+                            <span>{ex.label}</span>
+                            <span>+{formatPrice(ex.price)}</span>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* ── RESULT ── */
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="bg-[#111] text-white p-10 md:p-14">
+                <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-5">Итоговая стоимость</p>
+                <div className="font-display text-6xl md:text-7xl font-light leading-none mb-2">
                   {formatPrice(calcPrice())}
                 </div>
-                <p className="text-white/30 text-xs mt-3">Итоговая цена уточняется при замере</p>
+                <p className="text-white/30 text-sm mb-10">Цена ориентировочная, уточняется при замере</p>
+
+                <div className="space-y-3 border-t border-white/10 pt-8 mb-10">
+                  {[
+                    ["Тип мебели", calcTypeObj?.label ?? "—"],
+                    ["Стиль", calcStyleObj?.label ?? "—"],
+                    ["Материал", calcMaterialObj?.label ?? "—"],
+                    ...(hasFacadeStep ? [["Фасад", calcFacadeObj?.label ?? "—"]] : []),
+                    ["Размеры (Ш×В×Г)", `${calcWidth}×${calcHeight}×${calcDepth} см`],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex justify-between text-sm">
+                      <span className="text-white/40">{label}</span>
+                      <span>{value}</span>
+                    </div>
+                  ))}
+                  {calcExtras.length > 0 && calcExtras.map((eid) => {
+                    const ex = availableExtras.find((x) => x.id === eid);
+                    return ex ? (
+                      <div key={eid} className="flex justify-between text-sm text-white/60">
+                        <span>+ {ex.label}</span>
+                        <span>+{formatPrice(ex.price)}</span>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+
+                <button className="w-full bg-white text-[#111] py-3.5 text-[11px] tracking-widest uppercase hover:bg-[#f0f0f0] transition-colors">
+                  Заказать бесплатный замер
+                </button>
               </div>
 
-              <div className="mt-10 space-y-3 border-t border-white/10 pt-8">
-                {[
-                  ["Тип", calcType],
-                  ["Материал", calcMaterial],
-                  ["Ширина × Высота × Глубина", `${calcWidth} × ${calcHeight} × ${calcDepth} см`],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex justify-between text-sm">
-                    <span className="text-white/40">{label}</span>
-                    <span>{value}</span>
-                  </div>
-                ))}
+              <div className="flex flex-col gap-4">
+                <div className="bg-white border border-[#e8e8e8] p-8 flex-1">
+                  <Icon name="CheckCircle" size={32} className="text-[#111] mb-4" />
+                  <h3 className="font-display text-2xl font-light mb-3">Что входит в стоимость?</h3>
+                  <ul className="space-y-2.5 text-[13px] text-[#555]">
+                    {[
+                      "Выезд замерщика бесплатно",
+                      "Разработка 3D-проекта",
+                      "Изготовление на нашем производстве",
+                      "Доставка и подъём",
+                      "Профессиональная сборка",
+                      "Гарантия 2 года на изделие",
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2.5">
+                        <Icon name="Check" size={14} className="text-[#111] mt-0.5 flex-shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <button
+                  onClick={calcReset}
+                  className="border border-[#ddd] py-3.5 text-[11px] tracking-widest uppercase hover:border-[#111] transition-colors"
+                >
+                  Рассчитать другую мебель
+                </button>
               </div>
-
-              <button className="mt-8 bg-white text-[#111] py-3.5 text-[11px] tracking-widest uppercase hover:bg-[#f0f0f0] transition-colors">
-                Заказать бесплатный замер
-              </button>
             </div>
-          </div>
+          )}
         </div>
       </section>
 

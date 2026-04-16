@@ -427,6 +427,15 @@ export default function Index() {
             >
               Рассчитать стоимость
             </button>
+            <a
+              href="https://instagram.com/kuhni_merta"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 border border-white/50 text-white/80 px-8 py-3.5 text-[11px] tracking-widest uppercase hover:border-white hover:text-white transition-colors duration-300"
+            >
+              <Icon name="Instagram" size={15} />
+              @kuhni_merta
+            </a>
           </div>
         </div>
 
@@ -442,8 +451,8 @@ export default function Index() {
       <div className="bg-[#111] text-white py-3 overflow-hidden select-none">
         <div className="ticker-track">
           {[...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-            <span key={i} className="text-[10px] tracking-[0.3em] uppercase mx-10 opacity-70">
-              {item} <span className="mx-5 opacity-30">◆</span>
+            <span key={i} className="text-[11px] tracking-[0.3em] uppercase mx-10 text-white font-medium">
+              {item} <span className="mx-5 opacity-50">◆</span>
             </span>
           ))}
         </div>
@@ -909,25 +918,25 @@ export default function Index() {
       </section>
 
       {/* ── ABOUT ── */}
-      <section id="about" className="bg-[#111] text-white py-24">
+      <section id="about" className="bg-white text-[#111] py-24 border-t border-[#eee]">
         <div className="max-w-7xl mx-auto px-5 md:px-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-6">Наша история</p>
+              <p className="text-[10px] tracking-[0.3em] uppercase text-[#999] mb-6">Наша история</p>
               <h2 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-light leading-tight mb-8">
                 О компании<br /><em>Merta</em>
               </h2>
-              <p className="text-white/55 leading-relaxed mb-5 text-[15px]">
+              <p className="text-[#444] leading-relaxed mb-5 text-[15px]">
                 Компания Merta основана Вадиновым Степаном Николаевичем. Мы создаём мебель, которая отражает личность своего владельца — строгие линии, честные материалы, долгий срок службы.
               </p>
-              <p className="text-white/55 leading-relaxed mb-10 text-[15px]">
+              <p className="text-[#444] leading-relaxed mb-10 text-[15px]">
                 Каждый предмет изготавливается по индивидуальным параметрам на нашем производстве. Мы работаем с МДФ, ЛДСП и натуральным массивом дерева, подбирая материал под задачу и бюджет.
               </p>
               <div className="grid grid-cols-3 gap-6">
                 {[["7+", "Лет опыта"], ["1200+", "Объектов"], ["100%", "Гарантия"]].map(([num, label]) => (
                   <div key={label}>
-                    <p className="font-display text-4xl font-light mb-1">{num}</p>
-                    <p className="text-white/35 text-[10px] tracking-wider uppercase">{label}</p>
+                    <p className="font-display text-4xl font-light mb-1 text-[#111]">{num}</p>
+                    <p className="text-[#999] text-[10px] tracking-wider uppercase">{label}</p>
                   </div>
                 ))}
               </div>
@@ -936,7 +945,7 @@ export default function Index() {
               <img
                 src="https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/5f94a626-e3c2-4f82-af58-e90a0b5e423b.jpg"
                 alt="Merta мастерская"
-                className="w-full h-full object-cover opacity-60"
+                className="w-full h-full object-cover"
               />
             </div>
           </div>

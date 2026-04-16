@@ -969,10 +969,11 @@ export default function Index() {
       </section>
 
       {/* ── CONTACTS ── */}
-      <section id="contacts" className="py-24 max-w-7xl mx-auto px-5 md:px-10">
+      <section id="contacts" className="py-24 bg-[#111]">
+        <div className="max-w-7xl mx-auto px-5 md:px-10">
         <div className="mb-14">
-          <p className="text-[10px] tracking-[0.3em] uppercase text-[#999] mb-3">Напишите нам</p>
-          <h2 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-light">Контакты</h2>
+          <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3">Напишите нам</p>
+          <h2 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-light text-white">Контакты</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
@@ -994,17 +995,18 @@ export default function Index() {
             },
           ].map(({ label, value, href }) => (
             <div key={label} className="flex flex-col gap-2">
-              <div className="w-8 h-px bg-[#111] mb-3" />
-              <p className="text-[10px] tracking-widest uppercase text-[#999]">{label}</p>
+              <div className="w-8 h-px bg-white/30 mb-3" />
+              <p className="text-[10px] tracking-widest uppercase text-white/40">{label}</p>
               {href ? (
-                <a href={href} className="font-display text-xl font-light hover:opacity-40 transition-opacity break-all">
+                <a href={href} className="font-display text-xl font-light text-white hover:opacity-40 transition-opacity break-all">
                   {value}
                 </a>
               ) : (
-                <p className="font-display text-xl font-light">{value}</p>
+                <p className="font-display text-xl font-light text-white">{value}</p>
               )}
             </div>
           ))}
+        </div>
         </div>
       </section>
 

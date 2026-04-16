@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -80,6 +81,7 @@ interface CartItem {
 }
 
 export default function Index() {
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -92,25 +94,15 @@ export default function Index() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
 
-  // Calculator — step-by-step
-  const [calcStep, setCalcStep] = useState(0);
-  const [calcType, setCalcType] = useState("");
-  const [calcStyle, setCalcStyle] = useState("");
-  const [calcMaterial, setCalcMaterial] = useState("");
-  const [calcFacade, setCalcFacade] = useState("");
-  const [calcWidth, setCalcWidth] = useState(200);
-  const [calcHeight, setCalcHeight] = useState(220);
-  const [calcDepth, setCalcDepth] = useState(60);
-  const [calcExtras, setCalcExtras] = useState<string[]>([]);
-  const [calcDone, setCalcDone] = useState(false);
+
 
   const navLinks = [
-    { href: "#home", label: "Главная" },
-    { href: "#catalog", label: "Каталог" },
-    { href: "#recommendations", label: "Рекомендации" },
-    { href: "#calculator", label: "Калькулятор" },
-    { href: "#about", label: "О нас" },
-    { href: "#contacts", label: "Контакты" },
+    { href: "#home", label: "Главная", internal: true },
+    { href: "#catalog", label: "Каталог", internal: true },
+    { href: "#recommendations", label: "Рекомендации", internal: true },
+    { href: "/calculator", label: "Калькулятор", internal: false },
+    { href: "#about", label: "О нас", internal: true },
+    { href: "#contacts", label: "Контакты", internal: true },
   ];
 
   useEffect(() => {
@@ -141,181 +133,6 @@ export default function Index() {
   const cartTotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
-  // Calculator config
-  const CALC_TYPES = [
-    { id: "kitchen", label: "Кухня", icon: "ChefHat", base: 95000 },
-    { id: "wardrobe", label: "Шкаф-купе", icon: "Package", base: 55000 },
-    { id: "bedroom", label: "Спальня", icon: "Bed", base: 85000 },
-    { id: "sofa", label: "Диван", icon: "Sofa", base: 65000 },
-    { id: "hallway", label: "Прихожая", icon: "DoorOpen", base: 45000 },
-    { id: "office", label: "Кабинет", icon: "Monitor", base: 70000 },
-    { id: "bathroom", label: "Тумба в ванную", icon: "Droplets", base: 25000 },
-    { id: "childroom", label: "Детская", icon: "Star", base: 80000 },
-  ];
-  const CALC_STYLES: Record<string, { id: string; label: string; coef: number }[]> = {
-    kitchen: [
-      { id: "modern", label: "Современный", coef: 1.0 },
-      { id: "classic", label: "Классический", coef: 1.15 },
-      { id: "loft", label: "Лофт", coef: 1.1 },
-      { id: "minimalism", label: "Минимализм", coef: 0.95 },
-      { id: "scandinavian", label: "Скандинавский", coef: 1.05 },
-    ],
-    wardrobe: [
-      { id: "sliding", label: "Раздвижной", coef: 1.0 },
-      { id: "swing", label: "Распашной", coef: 0.9 },
-      { id: "corner", label: "Угловой", coef: 1.25 },
-      { id: "builtin", label: "Встроенный", coef: 1.1 },
-    ],
-    bedroom: [
-      { id: "modern", label: "Современный", coef: 1.0 },
-      { id: "classic", label: "Классический", coef: 1.2 },
-      { id: "minimalism", label: "Минимализм", coef: 0.95 },
-      { id: "provence", label: "Прованс", coef: 1.15 },
-    ],
-    sofa: [
-      { id: "straight", label: "Прямой", coef: 1.0 },
-      { id: "corner", label: "Угловой", coef: 1.3 },
-      { id: "modular", label: "Модульный", coef: 1.4 },
-      { id: "ottoman", label: "С оттоманкой", coef: 1.15 },
-    ],
-    hallway: [
-      { id: "modern", label: "Современный", coef: 1.0 },
-      { id: "classic", label: "Классический", coef: 1.1 },
-      { id: "compact", label: "Компактный", coef: 0.85 },
-    ],
-    office: [
-      { id: "executive", label: "Руководитель", coef: 1.2 },
-      { id: "home", label: "Домашний", coef: 1.0 },
-      { id: "open", label: "Open space", coef: 1.1 },
-    ],
-    bathroom: [
-      { id: "pedestal", label: "Напольная", coef: 1.0 },
-      { id: "hanging", label: "Подвесная", coef: 1.1 },
-      { id: "corner", label: "Угловая", coef: 1.15 },
-    ],
-    childroom: [
-      { id: "baby", label: "Малыш (0–3)", coef: 0.9 },
-      { id: "junior", label: "Школьник (4–12)", coef: 1.0 },
-      { id: "teen", label: "Подросток (13+)", coef: 1.05 },
-      { id: "bunk", label: "Двухъярусная", coef: 1.2 },
-    ],
-  };
-  const CALC_MATERIALS = [
-    { id: "ldsp", label: "ЛДСП", desc: "Бюджетно и практично", coef: 1.0 },
-    { id: "mdf", label: "МДФ", desc: "Оптимальное качество", coef: 1.45 },
-    { id: "massiv", label: "Массив дерева", desc: "Премиум, долговечность", coef: 2.4 },
-    { id: "mdf_kraska", label: "МДФ + Эмаль", desc: "Глянцевое покрытие", coef: 1.7 },
-  ];
-  const CALC_FACADES: Record<string, { id: string; label: string; coef: number }[]> = {
-    kitchen: [
-      { id: "glossy", label: "Глянец", coef: 1.2 },
-      { id: "matte", label: "Матовый", coef: 1.1 },
-      { id: "wood", label: "Под дерево", coef: 1.15 },
-      { id: "texture", label: "Текстурный", coef: 1.25 },
-      { id: "glass", label: "Со стеклом", coef: 1.35 },
-    ],
-    wardrobe: [
-      { id: "mirror", label: "Зеркальный", coef: 1.3 },
-      { id: "glossy", label: "Глянец", coef: 1.2 },
-      { id: "matte", label: "Матовый", coef: 1.0 },
-      { id: "wood", label: "Под дерево", coef: 1.1 },
-    ],
-    bedroom: [
-      { id: "matte", label: "Матовый", coef: 1.0 },
-      { id: "glossy", label: "Глянец", coef: 1.15 },
-      { id: "wood", label: "Под дерево", coef: 1.1 },
-    ],
-    sofa: [
-      { id: "fabric", label: "Ткань", coef: 1.0 },
-      { id: "velvet", label: "Велюр", coef: 1.2 },
-      { id: "leather", label: "Экокожа", coef: 1.35 },
-      { id: "chenille", label: "Шенилл", coef: 1.15 },
-    ],
-  };
-  const EXTRAS_BY_TYPE: Record<string, { id: string; label: string; price: number }[]> = {
-    kitchen: [
-      { id: "sink", label: "Мойка встроенная", price: 12000 },
-      { id: "island", label: "Кухонный остров", price: 35000 },
-      { id: "light", label: "Подсветка LED", price: 8000 },
-      { id: "soft", label: "Доводчики", price: 5000 },
-      { id: "waste", label: "Ящик для мусора", price: 3500 },
-      { id: "column", label: "Колонна-пенал", price: 18000 },
-    ],
-    wardrobe: [
-      { id: "mirror", label: "Зеркало внутри", price: 7000 },
-      { id: "light", label: "Подсветка", price: 5000 },
-      { id: "trouser", label: "Брючница", price: 3000 },
-      { id: "safe", label: "Встроенный сейф", price: 12000 },
-    ],
-    bedroom: [
-      { id: "dresser", label: "Комод", price: 22000 },
-      { id: "nightstand", label: "Тумбочки (2 шт)", price: 14000 },
-      { id: "mirror", label: "Зеркало", price: 8000 },
-      { id: "light", label: "Подсветка изголовья", price: 6000 },
-    ],
-    sofa: [
-      { id: "storage", label: "Ящик для белья", price: 5000 },
-      { id: "mechanism", label: "Механизм раскладки", price: 8000 },
-      { id: "armrests", label: "Регул. подлокотники", price: 6000 },
-    ],
-    hallway: [
-      { id: "mirror", label: "Зеркало", price: 7000 },
-      { id: "shoe", label: "Тумба для обуви", price: 12000 },
-      { id: "hooks", label: "Крючки и вешалки", price: 2500 },
-    ],
-    office: [
-      { id: "monitor", label: "Подставка под монитор", price: 4000 },
-      { id: "bookcase", label: "Книжный шкаф", price: 18000 },
-      { id: "safe", label: "Сейф встроенный", price: 14000 },
-    ],
-    bathroom: [
-      { id: "mirror", label: "Зеркало-шкаф", price: 9000 },
-      { id: "shelf", label: "Полка над раковиной", price: 3500 },
-    ],
-    childroom: [
-      { id: "desk", label: "Письменный стол", price: 16000 },
-      { id: "shelf", label: "Полка-стеллаж", price: 8000 },
-      { id: "light", label: "Ночник встроенный", price: 4000 },
-      { id: "board", label: "Магнитная доска", price: 5500 },
-    ],
-  };
-
-  const calcTypeObj = CALC_TYPES.find((t) => t.id === calcType);
-  const calcStyleObj = (CALC_STYLES[calcType] || CALC_STYLES.kitchen)?.find((s) => s.id === calcStyle);
-  const calcMaterialObj = CALC_MATERIALS.find((m) => m.id === calcMaterial);
-  const calcFacadeObj = (CALC_FACADES[calcType] || CALC_FACADES.kitchen)?.find((f) => f.id === calcFacade);
-  const availableExtras = EXTRAS_BY_TYPE[calcType] || [];
-  const hasFacadeStep = !!CALC_FACADES[calcType];
-
-  const TOTAL_STEPS = hasFacadeStep ? 5 : 4; // type, style, material, [facade], sizes
-
-  const calcPrice = () => {
-    if (!calcTypeObj) return 0;
-    const base = calcTypeObj.base;
-    const area = (calcWidth * calcHeight) / 10000;
-    const styleCoef = calcStyleObj?.coef ?? 1.0;
-    const matCoef = calcMaterialObj?.coef ?? 1.0;
-    const facadeCoef = calcFacadeObj?.coef ?? 1.0;
-    const depthCoef = calcDepth > 65 ? 1.12 : 1.0;
-    const extrasTotal = calcExtras.reduce((sum, eid) => {
-      const e = availableExtras.find((x) => x.id === eid);
-      return sum + (e?.price ?? 0);
-    }, 0);
-    return Math.round(base + area * styleCoef * matCoef * facadeCoef * depthCoef * 78000 + extrasTotal);
-  };
-
-  const toggleExtra = (id: string) =>
-    setCalcExtras((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-
-  const calcReset = () => {
-    setCalcStep(0); setCalcType(""); setCalcStyle(""); setCalcMaterial("");
-    setCalcFacade(""); setCalcWidth(200); setCalcHeight(220); setCalcDepth(60);
-    setCalcExtras([]); setCalcDone(false);
-  };
-
-  // Step labels
-  const stepLabels = ["Тип мебели", "Стиль", "Материал", ...(hasFacadeStep ? ["Фасад"] : []), "Размеры и опции"];
-
   const formatPrice = (n: number) =>
     n.toLocaleString("ru-RU", {
       style: "currency",
@@ -342,17 +159,29 @@ export default function Index() {
           </button>
 
           <div className="hidden md:flex items-center gap-7">
-            {navLinks.map((l) => (
-              <button
-                key={l.href}
-                onClick={() => scrollTo(l.href)}
-                className={`text-[11px] tracking-widest uppercase font-body transition-colors duration-500 ${
-                  scrolled ? "text-[#aaa] hover:text-white" : "text-[#555] hover:text-[#111]"
-                }`}
-              >
-                {l.label}
-              </button>
-            ))}
+            {navLinks.map((l) =>
+              l.internal ? (
+                <button
+                  key={l.href}
+                  onClick={() => scrollTo(l.href)}
+                  className={`text-[11px] tracking-widest uppercase font-body transition-colors duration-500 ${
+                    scrolled ? "text-[#aaa] hover:text-white" : "text-[#555] hover:text-[#111]"
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ) : (
+                <button
+                  key={l.href}
+                  onClick={() => navigate(l.href)}
+                  className={`text-[11px] tracking-widest uppercase font-body transition-colors duration-500 ${
+                    scrolled ? "text-[#aaa] hover:text-white" : "text-[#555] hover:text-[#111]"
+                  }`}
+                >
+                  {l.label}
+                </button>
+              )
+            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -382,7 +211,7 @@ export default function Index() {
               {navLinks.map((l) => (
                 <button
                   key={l.href}
-                  onClick={() => scrollTo(l.href)}
+                  onClick={() => { if (l.internal) { scrollTo(l.href); } else { navigate(l.href); } setMobileOpen(false); }}
                   className="text-left text-white text-sm tracking-widest uppercase"
                 >
                   {l.label}
@@ -422,7 +251,7 @@ export default function Index() {
               Каталог
             </button>
             <button
-              onClick={() => scrollTo("#calculator")}
+              onClick={() => navigate("/calculator")}
               className="border border-white text-white px-8 py-3.5 text-[11px] tracking-widest uppercase hover:bg-white hover:text-[#111] transition-colors duration-300"
             >
               Рассчитать стоимость
@@ -605,8 +434,25 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ── CALCULATOR ── */}
-      <section id="calculator" className="py-24 bg-[#f9f9f7]">
+      {/* ── CALCULATOR CTA ── */}
+      <section className="py-20 bg-[#111] text-white">
+        <div className="max-w-7xl mx-auto px-5 md:px-10 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div>
+            <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3">Узнайте цену онлайн</p>
+            <h2 className="font-display text-3xl md:text-4xl font-light">Калькулятор стоимости мебели</h2>
+            <p className="text-white/50 mt-2 text-sm">Пошаговый расчёт по типу, материалу и размерам</p>
+          </div>
+          <button
+            onClick={() => navigate("/calculator")}
+            className="flex-shrink-0 bg-white text-[#111] px-10 py-4 text-[11px] tracking-widest uppercase hover:bg-[#f0f0f0] transition-colors"
+          >
+            Рассчитать цену
+          </button>
+        </div>
+      </section>
+
+      {/* ── CALCULATOR_PLACEHOLDER ── */}
+      <section id="calculator" className="py-24 bg-[#f9f9f7] hidden">
         <div className="max-w-7xl mx-auto px-5 md:px-10">
           <div className="mb-12">
             <p className="text-[10px] tracking-[0.3em] uppercase text-[#999] mb-3">Онлайн-расчёт</p>

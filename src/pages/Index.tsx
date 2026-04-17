@@ -687,18 +687,16 @@ export default function Index() {
                       </span>
                     )}
                   </div>
-                  <div className="p-3 md:p-5">
+                  <div className="p-3 md:p-5 flex flex-col">
                     <p className="text-[10px] tracking-widest uppercase text-[#999] mb-1 truncate">{p.category}</p>
-                    <h3 className="font-display text-lg md:text-2xl font-light mb-2 leading-tight">{p.name}</h3>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-body font-semibold text-sm whitespace-nowrap">от {formatPrice(p.price)}</p>
-                      <button
-                        onClick={() => addToCart(p)}
-                        className="flex items-center gap-1 text-[10px] tracking-wider uppercase border border-[#111] px-2 py-2 hover:bg-[#111] hover:text-white transition-colors duration-300 whitespace-nowrap"
-                      >
-                        <Icon name="Plus" size={11} /> В корзину
-                      </button>
-                    </div>
+                    <h3 className="font-display text-base md:text-2xl font-light mb-1 leading-tight">{p.name}</h3>
+                    <p className="font-body font-semibold text-sm mb-3">от {formatPrice(p.price)}</p>
+                    <button
+                      onClick={() => addToCart(p)}
+                      className="w-full flex items-center justify-center gap-1.5 text-[10px] tracking-wider uppercase border border-[#111] py-2 hover:bg-[#111] hover:text-white transition-colors duration-300"
+                    >
+                      <Icon name="Plus" size={11} /> В корзину
+                    </button>
                   </div>
                 </div>
               ))}

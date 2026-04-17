@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 interface Props {
   type: string;
   material: string;
@@ -7,385 +9,527 @@ interface Props {
   depth: number;
 }
 
-const MATERIAL_COLORS: Record<string, { body: string; edge: string; shadow: string }> = {
-  ldsp:       { body: "#e8ddd0", edge: "#c9b89a", shadow: "#b8a488" },
-  mdf:        { body: "#d6cfc8", edge: "#b0a89e", shadow: "#9e9088" },
-  massiv:     { body: "#c8a96e", edge: "#a07c40", shadow: "#8a6530" },
-  mdf_kraska: { body: "#f0f0f0", edge: "#d0d0d0", shadow: "#b8b8b8" },
-  default:    { body: "#ddd6cc", edge: "#b8afa4", shadow: "#a09890" },
+// Реальные цвета материалов — отчётливо разные
+const MATERIAL_COLORS: Record<string, { face: string; top: string; side: string; handle: string; gloss: boolean }> = {
+  ldsp:       { face: "#dfd3b8", top: "#c8b99a", side: "#b5a07f", handle: "#7a6a55", gloss: false },
+  mdf:        { face: "#c8c8c8", top: "#adadad", side: "#929292", handle: "#555555", gloss: false },
+  massiv:     { face: "#b87333", top: "#8f5320", side: "#6e3d13", handle: "#3d2008", gloss: false },
+  mdf_kraska: { face: "#f5f5f5", top: "#e0e0e0", side: "#c5c5c5", handle: "#888888", gloss: true  },
+  default:    { face: "#d9cec0", top: "#bfb09e", side: "#a89880", handle: "#6b5c47", gloss: false },
 };
 
-function getColors(material: string) {
-  return MATERIAL_COLORS[material] || MATERIAL_COLORS.default;
+function getC(material: string) {
+  return MATERIAL_COLORS[material] ?? MATERIAL_COLORS.default;
 }
 
-// Изометрическая кухня
-function KitchenSVG({ w, h, d, colors }: { w: number; h: number; d: number; colors: ReturnType<typeof getColors> }) {
-  const sx = Math.min(Math.max(w / 240, 0.6), 1.4);
-  const sy = Math.min(Math.max(h / 220, 0.6), 1.4);
-  const sd = Math.min(Math.max(d / 60, 0.6), 1.3);
+// Изометрические константы (30° проекция)
+const ISO_X = 0.866; // cos(30°)
+const ISO_Y = 0.5;   // sin(30°)
+
+// Строит изометрический прямоугольный параллелепипед
+// ox, oy — левый нижний угол фронтальной грани
+// W — ширина (по X), H — высота (по Y), D — глубина (уходит вправо-вверх)
+function IsoBox({
+  ox, oy, W, H, D,
+  face, top, side,
+  stroke = "#00000033",
+  sw = 0.8,
+  opacity = 1,
+}: {
+  ox: number; oy: number; W: number; H: number; D: number;
+  face: string; top: string; side: string;
+  stroke?: string; sw?: number; opacity?: number;
+}) {
+  const dx = D * ISO_X;
+  const dy = D * ISO_Y;
+
+  // 8 вершин
+  const A = [ox,     oy];          // фронт нижний левый
+  const B = [ox + W, oy];          // фронт нижний правый
+  const C = [ox + W, oy - H];      // фронт верхний правый
+  const Dv= [ox,     oy - H];      // фронт верхний левый
+  const E = [ox + dx,     oy - dy];           // зад нижний левый
+  const F = [ox + W + dx, oy - dy];           // зад нижний правый
+  const G = [ox + W + dx, oy - H - dy];       // зад верхний правый
+  const Hv= [ox + dx,     oy - H - dy];       // зад верхний левый
+
+  const pt = (v: number[]) => `${v[0]},${v[1]}`;
 
   return (
-    <svg viewBox="0 0 280 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-      {/* тень */}
-      <ellipse cx="140" cy="205" rx={75 * sx} ry={10} fill="rgba(0,0,0,0.12)" />
+    <g opacity={opacity}>
+      {/* Фронтальная грань */}
+      <polygon points={`${pt(A)} ${pt(B)} ${pt(C)} ${pt(Dv)}`} fill={face} stroke={stroke} strokeWidth={sw} />
+      {/* Верхняя грань */}
+      <polygon points={`${pt(Dv)} ${pt(C)} ${pt(G)} ${pt(Hv)}`} fill={top} stroke={stroke} strokeWidth={sw} />
+      {/* Правая боковая грань */}
+      <polygon points={`${pt(B)} ${pt(F)} ${pt(G)} ${pt(C)}`} fill={side} stroke={stroke} strokeWidth={sw} />
+    </g>
+  );
+}
 
-      {/* Нижний корпус — фронт */}
-      <path
-        d={`M ${70} ${160} L ${70 + 130 * sx} ${160} L ${70 + 130 * sx} ${160 + 45 * sy * 0.4} L ${70} ${160 + 45 * sy * 0.4} Z`}
-        fill={colors.body}
-        stroke={colors.edge} strokeWidth="1"
-      />
-      {/* Нижний корпус — верх */}
-      <path
-        d={`M ${70} ${160} L ${70 + 130 * sx} ${160} L ${70 + 130 * sx + 25 * sd} ${160 - 18 * sd} L ${70 + 25 * sd} ${160 - 18 * sd} Z`}
-        fill={colors.edge}
-        stroke={colors.shadow} strokeWidth="0.8"
-      />
-      {/* Нижний корпус — правый бок */}
-      <path
-        d={`M ${70 + 130 * sx} ${160} L ${70 + 130 * sx + 25 * sd} ${160 - 18 * sd} L ${70 + 130 * sx + 25 * sd} ${160 - 18 * sd + 45 * sy * 0.4} L ${70 + 130 * sx} ${160 + 45 * sy * 0.4} Z`}
-        fill={colors.shadow}
-        stroke={colors.shadow} strokeWidth="0.8"
-      />
+// ─── КУХНЯ ───────────────────────────────────────────────────────────────────
+function KitchenSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
+  // Нижний ящичный блок: ширина W, высота ~0.38H, глубина D
+  const bh = H * 0.38;
+  const uh = H * 0.32; // верхние шкафы
+  const gap = H * 0.08; // пространство между
+
+  // Столешница чуть шире
+  const tw = W + 4;
+  const th = H * 0.04;
+
+  // Центрируем
+  const ox = (200 - W) / 2;
+  const oy = 175;
+
+  const topFace = c.gloss ? "#ffffff" : c.face;
+
+  return (
+    <svg viewBox="0 0 200 190" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
+      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={180} rx={W * 0.45} ry={5} fill="rgba(0,0,0,0.13)" />
+
+      {/* Нижний блок */}
+      <IsoBox ox={ox} oy={oy} W={W} H={bh} D={D} face={c.face} top={c.top} side={c.side} />
 
       {/* Столешница */}
-      <path
-        d={`M ${65} ${155} L ${70 + 130 * sx + 5} ${155} L ${70 + 130 * sx + 5 + 27 * sd} ${155 - 20 * sd} L ${65 + 27 * sd} ${155 - 20 * sd} Z`}
-        fill="#8a6530"
-        stroke="#6b4e24" strokeWidth="1"
+      <IsoBox ox={ox - 2} oy={oy - bh} W={tw} H={th} D={D + 2} face={c.handle} top={c.gloss ? "#eee" : "#7a5c35"} side={c.side} />
+
+      {/* Верхние шкафы — чуть уже */}
+      <IsoBox ox={ox + W * 0.05} oy={oy - bh - th - gap * H} W={W * 0.9} H={uh} D={D * 0.7}
+        face={c.face} top={c.top} side={c.side}
       />
 
-      {/* Верхний корпус — фронт */}
-      <path
-        d={`M ${80} ${90} L ${80 + 110 * sx} ${90} L ${80 + 110 * sx} ${90 + 55 * sy * 0.45} L ${80} ${90 + 55 * sy * 0.45} Z`}
-        fill={colors.body}
-        stroke={colors.edge} strokeWidth="1"
-      />
-      {/* Верхний корпус — верх */}
-      <path
-        d={`M ${80} ${90} L ${80 + 110 * sx} ${90} L ${80 + 110 * sx + 22 * sd} ${90 - 16 * sd} L ${80 + 22 * sd} ${90 - 16 * sd} Z`}
-        fill={colors.edge}
-        stroke={colors.shadow} strokeWidth="0.8"
-      />
-      {/* Верхний корпус — правый бок */}
-      <path
-        d={`M ${80 + 110 * sx} ${90} L ${80 + 110 * sx + 22 * sd} ${90 - 16 * sd} L ${80 + 110 * sx + 22 * sd} ${90 - 16 * sd + 55 * sy * 0.45} L ${80 + 110 * sx} ${90 + 55 * sy * 0.45} Z`}
-        fill={colors.shadow}
-        stroke={colors.shadow} strokeWidth="0.8"
-      />
+      {/* Разделители нижнего блока */}
+      {[0.33, 0.66].map((t, i) => (
+        <line key={i}
+          x1={ox + W * t} y1={oy}
+          x2={ox + W * t} y2={oy - bh}
+          stroke={c.side} strokeWidth="0.8"
+        />
+      ))}
 
       {/* Ручки нижнего */}
-      {[0.2, 0.5, 0.8].map((t, i) => (
+      {[0.16, 0.5, 0.83].map((t, i) => (
         <line key={i}
-          x1={70 + 130 * sx * t + 5} y1={163}
-          x2={70 + 130 * sx * t + 20} y2={163}
-          stroke={colors.shadow} strokeWidth="1.5" strokeLinecap="round"
-        />
-      ))}
-      {/* Ручки верхнего */}
-      {[0.25, 0.65].map((t, i) => (
-        <line key={i}
-          x1={80 + 110 * sx * t + 5} y1={115}
-          x2={80 + 110 * sx * t + 20} y2={115}
-          stroke={colors.shadow} strokeWidth="1.5" strokeLinecap="round"
+          x1={ox + W * t - 6} y1={oy - bh * 0.45}
+          x2={ox + W * t + 6} y2={oy - bh * 0.45}
+          stroke={c.handle} strokeWidth="1.5" strokeLinecap="round"
         />
       ))}
 
-      {/* Мойка */}
-      <rect x={80} y={140} width={40 * sx} height={15} rx="2"
-        fill="rgba(150,180,200,0.4)" stroke={colors.shadow} strokeWidth="0.8"
-      />
+      {/* Ручки верхних */}
+      {[0.3, 0.7].map((t, i) => (
+        <line key={i}
+          x1={ox + W * 0.05 + W * 0.9 * t - 5} y1={oy - bh - th - gap * H - uh * 0.6}
+          x2={ox + W * 0.05 + W * 0.9 * t + 5} y2={oy - bh - th - gap * H - uh * 0.6}
+          stroke={c.handle} strokeWidth="1.5" strokeLinecap="round"
+        />
+      ))}
+
+      {/* Мойка (только если достаточно широко) */}
+      {W > 50 && (
+        <ellipse
+          cx={ox + W * 0.25} cy={oy - bh - th * 0.5}
+          rx={W * 0.14} ry={th * 1.5}
+          fill="rgba(160,200,220,0.5)" stroke={c.side} strokeWidth="0.6"
+        />
+      )}
     </svg>
   );
 }
 
-// Шкаф-купе
-function WardrobeSVG({ w, h, d, colors }: { w: number; h: number; d: number; colors: ReturnType<typeof getColors> }) {
-  const sx = Math.min(Math.max(w / 160, 0.6), 1.5);
-  const sy = Math.min(Math.max(h / 220, 0.6), 1.4);
-  const sd = Math.min(Math.max(d / 60, 0.6), 1.3);
+// ─── ШКАФ-КУПЕ ───────────────────────────────────────────────────────────────
+function WardrobeSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
+  const ox = (200 - W) / 2;
+  const oy = 175;
 
   return (
-    <svg viewBox="0 0 280 240" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-      <ellipse cx="140" cy="228" rx={70 * sx} ry={9} fill="rgba(0,0,0,0.1)" />
+    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
+      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={182} rx={W * 0.45} ry={5} fill="rgba(0,0,0,0.13)" />
 
-      {/* Фронт */}
-      <path
-        d={`M ${70} ${50} L ${70 + 140 * sx} ${50} L ${70 + 140 * sx} ${50 + 165 * sy * 0.85} L ${70} ${50 + 165 * sy * 0.85} Z`}
-        fill={colors.body} stroke={colors.edge} strokeWidth="1"
-      />
-      {/* Верх */}
-      <path
-        d={`M ${70} ${50} L ${70 + 140 * sx} ${50} L ${70 + 140 * sx + 30 * sd} ${50 - 22 * sd} L ${70 + 30 * sd} ${50 - 22 * sd} Z`}
-        fill={colors.edge} stroke={colors.shadow} strokeWidth="0.8"
-      />
-      {/* Правый бок */}
-      <path
-        d={`M ${70 + 140 * sx} ${50} L ${70 + 140 * sx + 30 * sd} ${50 - 22 * sd} L ${70 + 140 * sx + 30 * sd} ${50 - 22 * sd + 165 * sy * 0.85} L ${70 + 140 * sx} ${50 + 165 * sy * 0.85} Z`}
-        fill={colors.shadow} stroke={colors.shadow} strokeWidth="0.8"
-      />
+      {/* Корпус */}
+      <IsoBox ox={ox} oy={oy} W={W} H={H} D={D} face={c.face} top={c.top} side={c.side} />
 
-      {/* Раздвижные двери — вертикальная линия */}
-      <line
-        x1={70 + 70 * sx} y1={50}
-        x2={70 + 70 * sx} y2={50 + 165 * sy * 0.85}
-        stroke={colors.edge} strokeWidth="2"
-      />
+      {/* Вертикальный разделитель дверей */}
+      <line x1={ox + W / 2} y1={oy} x2={ox + W / 2} y2={oy - H} stroke={c.side} strokeWidth="1.5" />
 
       {/* Зеркало на левой двери */}
       <rect
-        x={74} y={60}
-        width={65 * sx} height={130 * sy * 0.75}
-        fill="rgba(200,220,240,0.3)"
-        stroke={colors.edge} strokeWidth="0.8"
+        x={ox + W * 0.04} y={oy - H * 0.92}
+        width={W * 0.42} height={H * 0.82}
+        fill="rgba(180,215,235,0.28)" stroke={c.top} strokeWidth="0.7"
       />
 
+      {/* Правая дверь — рисунок под дерево / глянец */}
+      {c.gloss ? (
+        <rect
+          x={ox + W * 0.52} y={oy - H * 0.92}
+          width={W * 0.44} height={H * 0.82}
+          fill="rgba(255,255,255,0.18)" stroke={c.top} strokeWidth="0.7"
+        />
+      ) : (
+        <>
+          <line x1={ox + W * 0.56} y1={oy - H * 0.9} x2={ox + W * 0.58} y2={oy - H * 0.08} stroke={c.top} strokeWidth="0.6" opacity="0.5" />
+          <line x1={ox + W * 0.66} y1={oy - H * 0.9} x2={ox + W * 0.68} y2={oy - H * 0.08} stroke={c.top} strokeWidth="0.6" opacity="0.5" />
+        </>
+      )}
+
       {/* Ручки */}
-      {[0.28, 0.72].map((t, i) => (
+      {[0.44, 0.92].map((t, i) => (
         <line key={i}
-          x1={70 + 140 * sx * t} y1={50 + 82 * sy * 0.85}
-          x2={70 + 140 * sx * t} y2={50 + 100 * sy * 0.85}
-          stroke={colors.shadow} strokeWidth="2" strokeLinecap="round"
+          x1={ox + W * t} y1={oy - H * 0.46}
+          x2={ox + W * t} y2={oy - H * 0.54}
+          stroke={c.handle} strokeWidth="2" strokeLinecap="round"
         />
       ))}
 
       {/* Плинтус */}
-      <rect x={70} y={50 + 165 * sy * 0.85} width={140 * sx} height={5}
-        fill={colors.shadow} stroke={colors.shadow} strokeWidth="0.5"
+      <IsoBox ox={ox + W * 0.02} oy={oy} W={W * 0.96} H={H * 0.04} D={D * 0.95}
+        face={c.side} top={c.side} side={c.handle}
       />
     </svg>
   );
 }
 
-// Диван
-function SofaSVG({ w, h, d, colors }: { w: number; h: number; d: number; colors: ReturnType<typeof getColors> }) {
-  const sx = Math.min(Math.max(w / 200, 0.6), 1.5);
-  const sy = Math.min(Math.max(h / 90, 0.6), 1.4);
-  const sd = Math.min(Math.max(d / 90, 0.6), 1.3);
+// ─── ДИВАН ───────────────────────────────────────────────────────────────────
+function SofaSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
+  // H — высота спинки, D — глубина сиденья
+  const armW = W * 0.1;
+  const seatH = H * 0.38;
+  const backH = H * 0.55;
+  const legH = H * 0.12;
+  const ox = (200 - W) / 2;
+  const oy = 175;
 
   return (
-    <svg viewBox="0 0 300 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-      <ellipse cx="150" cy="210" rx={90 * sx} ry={10} fill="rgba(0,0,0,0.1)" />
+    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
+      <ellipse cx={ox + W / 2 + D * ISO_X * 0.4} cy={181} rx={W * 0.42} ry={5} fill="rgba(0,0,0,0.12)" />
 
       {/* Ножки */}
-      {[0.12, 0.88].map((t, i) => (
-        <rect key={i}
-          x={50 + 200 * sx * t - 4} y={175 + 10 * sy}
-          width={8} height={18}
-          fill={colors.shadow}
+      {[ox + armW * 0.5, ox + W - armW * 0.5].map((x, i) => (
+        <IsoBox key={i} ox={x - 3} oy={oy} W={6} H={legH} D={5}
+          face={c.handle} top={c.side} side={c.handle}
         />
       ))}
 
-      {/* Сиденье — бок */}
-      <path
-        d={`M ${50 + 200 * sx} ${140} L ${50 + 200 * sx + 28 * sd} ${125} L ${50 + 200 * sx + 28 * sd} ${175} L ${50 + 200 * sx} ${175 + 10 * sy} Z`}
-        fill={colors.shadow}
-      />
-      {/* Сиденье — верх */}
-      <path
-        d={`M ${50} ${140} L ${50 + 200 * sx} ${140} L ${50 + 200 * sx + 28 * sd} ${125} L ${50 + 28 * sd} ${125} Z`}
-        fill={colors.edge}
-      />
-      {/* Сиденье — фронт */}
-      <path
-        d={`M ${50} ${140} L ${50 + 200 * sx} ${140} L ${50 + 200 * sx} ${175 + 10 * sy} L ${50} ${175 + 10 * sy} Z`}
-        fill={colors.body} stroke={colors.edge} strokeWidth="1"
+      {/* Сиденье */}
+      <IsoBox ox={ox} oy={oy - legH} W={W} H={seatH} D={D}
+        face={c.face} top={c.top} side={c.side}
       />
 
-      {/* Спинка — фронт */}
-      <path
-        d={`M ${50} ${100} L ${50 + 200 * sx} ${100} L ${50 + 200 * sx} ${140} L ${50} ${140} Z`}
-        fill={colors.body} stroke={colors.edge} strokeWidth="1"
-      />
-      {/* Спинка — верх */}
-      <path
-        d={`M ${50} ${100} L ${50 + 200 * sx} ${100} L ${50 + 200 * sx + 28 * sd} ${85} L ${50 + 28 * sd} ${85} Z`}
-        fill={colors.edge}
-      />
-      {/* Спинка — бок */}
-      <path
-        d={`M ${50 + 200 * sx} ${100} L ${50 + 200 * sx + 28 * sd} ${85} L ${50 + 200 * sx + 28 * sd} ${125} L ${50 + 200 * sx} ${140} Z`}
-        fill={colors.shadow}
+      {/* Спинка */}
+      <IsoBox ox={ox} oy={oy - legH - seatH} W={W} H={backH} D={D * 0.28}
+        face={c.face} top={c.top} side={c.side}
       />
 
       {/* Подлокотники */}
-      {[50, 50 + 200 * sx - 16].map((x, i) => (
-        <g key={i}>
-          <rect x={x} y={95} width={16} height={80 + 10 * sy} fill={colors.edge} stroke={colors.shadow} strokeWidth="0.8" />
-        </g>
-      ))}
+      <IsoBox ox={ox} oy={oy - legH} W={armW} H={seatH + backH * 0.7} D={D}
+        face={c.side} top={c.top} side={c.handle}
+      />
+      <IsoBox ox={ox + W - armW} oy={oy - legH} W={armW} H={seatH + backH * 0.7} D={D}
+        face={c.side} top={c.top} side={c.handle}
+      />
 
-      {/* Подушки */}
-      {[0.22, 0.55, 0.78].map((t, i) => (
-        <ellipse key={i}
-          cx={50 + 200 * sx * t + 16}
-          cy={115}
-          rx={24 * sx} ry={14}
-          fill={colors.edge} stroke={colors.shadow} strokeWidth="0.8"
-          opacity="0.7"
+      {/* Подушки на сиденье */}
+      {[0.18, 0.52, 0.82].filter((_, i) => W > 70 || i < 2).map((t, i) => (
+        <IsoBox key={i}
+          ox={ox + armW + (W - 2 * armW) * (t - 0.13)} oy={oy - legH - seatH}
+          W={(W - 2 * armW) * 0.28} H={seatH * 0.3} D={D * 0.88}
+          face={c.top} top={c.face} side={c.side} opacity={0.85}
         />
       ))}
     </svg>
   );
 }
 
-// Спальня
-function BedroomSVG({ w, h, d, colors }: { w: number; h: number; d: number; colors: ReturnType<typeof getColors> }) {
-  const sx = Math.min(Math.max(w / 200, 0.6), 1.4);
-  const sy = Math.min(Math.max(h / 220, 0.6), 1.4);
-  const sd = Math.min(Math.max(d / 200, 0.6), 1.3);
+// ─── СПАЛЬНЯ ─────────────────────────────────────────────────────────────────
+function BedroomSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
+  const headH = H * 0.55;   // изголовье
+  const frameH = H * 0.18;  // рама кровати
+  const mattH = H * 0.2;    // матрас
+  const legH = H * 0.07;
+  const ox = (200 - W) / 2;
+  const oy = 175;
 
   return (
-    <svg viewBox="0 0 300 230" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-      <ellipse cx="150" cy="218" rx={95 * sx} ry={10} fill="rgba(0,0,0,0.1)" />
-
-      {/* Матрас — бок */}
-      <path
-        d={`M ${50 + 195 * sx} ${135} L ${50 + 195 * sx + 35 * sd} ${115} L ${50 + 195 * sx + 35 * sd} ${165} L ${50 + 195 * sx} ${175} Z`}
-        fill={colors.edge}
-      />
-      {/* Матрас — верх */}
-      <path
-        d={`M ${50} ${135} L ${50 + 195 * sx} ${135} L ${50 + 195 * sx + 35 * sd} ${115} L ${50 + 35 * sd} ${115} Z`}
-        fill="white" stroke={colors.edge} strokeWidth="0.8"
-      />
-      {/* Матрас — фронт */}
-      <path
-        d={`M ${50} ${135} L ${50 + 195 * sx} ${135} L ${50 + 195 * sx} ${175} L ${50} ${175} Z`}
-        fill="rgba(240,240,245,0.95)" stroke={colors.edge} strokeWidth="1"
-      />
-
-      {/* Каркас кровати — фронт */}
-      <path
-        d={`M ${45} ${170} L ${45 + 205 * sx} ${170} L ${45 + 205 * sx} ${195} L ${45} ${195} Z`}
-        fill={colors.body} stroke={colors.edge} strokeWidth="1"
-      />
-      {/* Каркас — верх */}
-      <path
-        d={`M ${45} ${170} L ${45 + 205 * sx} ${170} L ${45 + 205 * sx + 36 * sd} ${150} L ${45 + 36 * sd} ${150} Z`}
-        fill={colors.edge}
-      />
-      {/* Каркас — бок */}
-      <path
-        d={`M ${45 + 205 * sx} ${170} L ${45 + 205 * sx + 36 * sd} ${150} L ${45 + 205 * sx + 36 * sd} ${175} L ${45 + 205 * sx} ${195} Z`}
-        fill={colors.shadow}
-      />
-
-      {/* Изголовье — фронт */}
-      <path
-        d={`M ${45} ${100} L ${45 + 205 * sx} ${100} L ${45 + 205 * sx} ${175} L ${45} ${175} Z`}
-        fill={colors.body} stroke={colors.edge} strokeWidth="1"
-      />
-      {/* Изголовье — верх */}
-      <path
-        d={`M ${45} ${100} L ${45 + 205 * sx} ${100} L ${45 + 205 * sx + 36 * sd} ${80} L ${45 + 36 * sd} ${80} Z`}
-        fill={colors.edge} stroke={colors.shadow} strokeWidth="0.8"
-      />
-      {/* Изголовье — бок */}
-      <path
-        d={`M ${45 + 205 * sx} ${100} L ${45 + 205 * sx + 36 * sd} ${80} L ${45 + 205 * sx + 36 * sd} ${155} L ${45 + 205 * sx} ${175} Z`}
-        fill={colors.shadow}
-      />
-
-      {/* Подушки */}
-      {[0.18, 0.62].map((t, i) => (
-        <path key={i}
-          d={`M ${55 + 195 * sx * t} ${120} L ${55 + 195 * sx * t + 75 * sx * 0.4} ${120} L ${55 + 195 * sx * t + 75 * sx * 0.4} ${138} L ${55 + 195 * sx * t} ${138} Z`}
-          fill="white" stroke="rgba(200,200,210,0.8)" strokeWidth="0.8"
-          rx="4"
-        />
-      ))}
+    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
+      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={181} rx={W * 0.46} ry={5} fill="rgba(0,0,0,0.12)" />
 
       {/* Ножки */}
-      {[[45, 195], [45 + 205 * sx, 195]].map(([x, y], i) => (
-        <rect key={i} x={x - 4} y={y} width={8} height={14} fill={colors.shadow} />
-      ))}
-    </svg>
-  );
-}
-
-// Универсальный для остальных типов
-function GenericSVG({ type, w, h, d, colors }: { type: string; w: number; h: number; d: number; colors: ReturnType<typeof getColors> }) {
-  const sx = Math.min(Math.max(w / 180, 0.6), 1.5);
-  const sy = Math.min(Math.max(h / 200, 0.6), 1.5);
-  const sd = Math.min(Math.max(d / 60, 0.6), 1.3);
-
-  return (
-    <svg viewBox="0 0 280 240" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-      <ellipse cx="140" cy="228" rx={70 * sx} ry={9} fill="rgba(0,0,0,0.1)" />
-
-      {/* Фронт */}
-      <path
-        d={`M ${75} ${55} L ${75 + 130 * sx} ${55} L ${75 + 130 * sx} ${55 + 160 * sy * 0.82} L ${75} ${55 + 160 * sy * 0.82} Z`}
-        fill={colors.body} stroke={colors.edge} strokeWidth="1"
-      />
-      {/* Верх */}
-      <path
-        d={`M ${75} ${55} L ${75 + 130 * sx} ${55} L ${75 + 130 * sx + 28 * sd} ${55 - 20 * sd} L ${75 + 28 * sd} ${55 - 20 * sd} Z`}
-        fill={colors.edge} stroke={colors.shadow} strokeWidth="0.8"
-      />
-      {/* Правый бок */}
-      <path
-        d={`M ${75 + 130 * sx} ${55} L ${75 + 130 * sx + 28 * sd} ${55 - 20 * sd} L ${75 + 130 * sx + 28 * sd} ${55 - 20 * sd + 160 * sy * 0.82} L ${75 + 130 * sx} ${55 + 160 * sy * 0.82} Z`}
-        fill={colors.shadow} stroke={colors.shadow} strokeWidth="0.8"
-      />
-
-      {/* Полки */}
-      {[0.33, 0.66].map((t, i) => (
-        <line key={i}
-          x1={75} y1={55 + 160 * sy * 0.82 * t}
-          x2={75 + 130 * sx} y2={55 + 160 * sy * 0.82 * t}
-          stroke={colors.edge} strokeWidth="1.2"
+      {[ox + 4, ox + W - 10].map((x, i) => (
+        <IsoBox key={i} ox={x} oy={oy} W={6} H={legH} D={5}
+          face={c.handle} top={c.side} side={c.handle}
         />
       ))}
 
-      {/* Ручка */}
-      <circle cx={75 + 65 * sx} cy={55 + 80 * sy * 0.82} r={5}
-        fill="none" stroke={colors.shadow} strokeWidth="1.5"
+      {/* Рама кровати */}
+      <IsoBox ox={ox} oy={oy - legH} W={W} H={frameH} D={D}
+        face={c.face} top={c.top} side={c.side}
+      />
+
+      {/* Матрас */}
+      <IsoBox ox={ox + W * 0.03} oy={oy - legH - frameH} W={W * 0.94} H={mattH} D={D * 0.94}
+        face="#f0eeea" top="#e8e6e0" side="#d5d2ca"
+      />
+
+      {/* Подушки */}
+      {[0.08, 0.54].filter((_, i) => W > 50 || i === 0).map((t, i) => (
+        <IsoBox key={i}
+          ox={ox + W * (0.06 + t * 0.88)} oy={oy - legH - frameH - mattH}
+          W={W * 0.38} H={mattH * 0.55} D={D * 0.32}
+          face="#ffffff" top="#f0f0f0" side="#ddd"
+        />
+      ))}
+
+      {/* Изголовье */}
+      <IsoBox ox={ox} oy={oy - legH - frameH - mattH} W={W} H={headH} D={D * 0.18}
+        face={c.face} top={c.top} side={c.side}
+      />
+
+      {/* Декор на изголовье — мягкая обивка */}
+      <rect
+        x={ox + W * 0.06} y={oy - legH - frameH - mattH - headH * 0.88}
+        width={W * 0.88} height={headH * 0.78}
+        rx="3"
+        fill={c.gloss ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.06)"}
+        stroke={c.top} strokeWidth="0.7"
       />
     </svg>
   );
 }
 
-export default function FurniturePreview({ type, material, style, width, height, depth }: Props) {
-  const colors = getColors(material);
+// ─── ПРИХОЖАЯ ────────────────────────────────────────────────────────────────
+function HalwaySVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
+  const ox = (200 - W) / 2;
+  const oy = 175;
+  const shelfH = H * 0.06;
 
-  const renderFurniture = () => {
-    switch (type) {
-      case "kitchen":   return <KitchenSVG w={width} h={height} d={depth} colors={colors} />;
-      case "wardrobe":  return <WardrobeSVG w={width} h={height} d={depth} colors={colors} />;
-      case "sofa":      return <SofaSVG w={width} h={height} d={depth} colors={colors} />;
-      case "bedroom":   return <BedroomSVG w={width} h={height} d={depth} colors={colors} />;
-      default:          return <GenericSVG type={type} w={width} h={height} d={depth} colors={colors} />;
-    }
-  };
+  return (
+    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
+      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={181} rx={W * 0.44} ry={5} fill="rgba(0,0,0,0.12)" />
+
+      {/* Нижний ящик для обуви */}
+      <IsoBox ox={ox} oy={oy} W={W} H={H * 0.22} D={D}
+        face={c.face} top={c.top} side={c.side}
+      />
+      {/* Корпус */}
+      <IsoBox ox={ox} oy={oy - H * 0.22} W={W} H={H * 0.62} D={D * 0.7}
+        face={c.face} top={c.top} side={c.side}
+      />
+      {/* Полки */}
+      {[0.35, 0.65].map((t, i) => (
+        <IsoBox key={i} ox={ox + W * 0.03} oy={oy - H * 0.22 - H * 0.62 * t} W={W * 0.94} H={shelfH} D={D * 0.66}
+          face={c.top} top={c.top} side={c.side}
+        />
+      ))}
+      {/* Зеркало */}
+      <rect x={ox + W * 0.15} y={oy - H} width={W * 0.7} height={H * 0.13}
+        fill="rgba(180,215,235,0.3)" stroke={c.top} strokeWidth="0.8"
+      />
+      {/* Крючки */}
+      {[0.2, 0.45, 0.7].map((t, i) => (
+        <g key={i}>
+          <circle cx={ox + W * t} cy={oy - H * 0.88} r={2.5} fill={c.handle} />
+          <line x1={ox + W * t} y1={oy - H * 0.88} x2={ox + W * t + 3} y2={oy - H * 0.78}
+            stroke={c.handle} strokeWidth="1.5" strokeLinecap="round"
+          />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+// ─── КАБИНЕТ ─────────────────────────────────────────────────────────────────
+function OfficeSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
+  const deskH = H * 0.1;
+  const deskD = D * 0.85;
+  const legH = H * 0.48;
+  const cabinetW = W * 0.35;
+  const ox = (200 - W) / 2;
+  const oy = 175;
+
+  return (
+    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
+      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={181} rx={W * 0.44} ry={5} fill="rgba(0,0,0,0.12)" />
+
+      {/* Тумба-шкаф */}
+      <IsoBox ox={ox} oy={oy} W={cabinetW} H={legH + deskH} D={deskD}
+        face={c.face} top={c.top} side={c.side}
+      />
+      {/* Ножки стола */}
+      <IsoBox ox={ox + W - 8} oy={oy} W={6} H={legH} D={5}
+        face={c.handle} top={c.side} side={c.handle}
+      />
+      {/* Столешница */}
+      <IsoBox ox={ox} oy={oy - legH} W={W} H={deskH} D={deskD}
+        face={c.top} top={c.gloss ? "#eee" : "#7a5c35"} side={c.side}
+      />
+      {/* Надстройка */}
+      <IsoBox ox={ox + W * 0.55} oy={oy - legH - deskH} W={W * 0.42} H={H * 0.38} D={D * 0.35}
+        face={c.face} top={c.top} side={c.side}
+      />
+      {/* Ручки тумбы */}
+      {[0.35, 0.7].map((t, i) => (
+        <circle key={i} cx={ox + cabinetW * 0.5} cy={oy - (legH + deskH) * t} r={3}
+          fill="none" stroke={c.handle} strokeWidth="1.2"
+        />
+      ))}
+      {/* Монитор */}
+      <rect x={ox + W * 0.3} y={oy - legH - deskH - H * 0.32}
+        width={W * 0.22} height={H * 0.26}
+        rx="2" fill="rgba(30,30,40,0.7)" stroke={c.side} strokeWidth="0.8"
+      />
+      <rect x={ox + W * 0.37} y={oy - legH - deskH - H * 0.06}
+        width={W * 0.08} height={H * 0.05}
+        fill={c.side}
+      />
+    </svg>
+  );
+}
+
+// ─── ВАННАЯ ──────────────────────────────────────────────────────────────────
+function BathroomSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
+  const ox = (200 - W) / 2;
+  const oy = 175;
+
+  return (
+    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
+      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={181} rx={W * 0.42} ry={5} fill="rgba(0,0,0,0.12)" />
+
+      {/* Корпус тумбы */}
+      <IsoBox ox={ox} oy={oy} W={W} H={H * 0.55} D={D}
+        face={c.face} top={c.top} side={c.side}
+      />
+      {/* Столешница с раковиной */}
+      <IsoBox ox={ox - 2} oy={oy - H * 0.55} W={W + 4} H={H * 0.06} D={D + 3}
+        face="#e0e0e0" top="#f0f0f0" side="#ccc"
+      />
+      {/* Раковина */}
+      <ellipse
+        cx={ox + W * 0.5} cy={oy - H * 0.55 - H * 0.02}
+        rx={W * 0.28} ry={W * 0.12}
+        fill="rgba(200,230,245,0.6)" stroke="#bbb" strokeWidth="0.8"
+      />
+      {/* Зеркало-шкаф */}
+      <IsoBox ox={ox + W * 0.05} oy={oy - H * 0.61} W={W * 0.9} H={H * 0.38} D={D * 0.22}
+        face="rgba(180,215,235,0.4)" top={c.top} side={c.side}
+      />
+      {/* Ручки */}
+      <line x1={ox + W * 0.4} y1={oy - H * 0.35} x2={ox + W * 0.6} y2={oy - H * 0.35}
+        stroke={c.handle} strokeWidth="1.5" strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// ─── ДЕТСКАЯ ─────────────────────────────────────────────────────────────────
+function ChildroomSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
+  const bedW = W * 0.55;
+  const deskW = W * 0.4;
+  const ox = (200 - W) / 2;
+  const oy = 175;
+
+  return (
+    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
+      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={181} rx={W * 0.44} ry={5} fill="rgba(0,0,0,0.12)" />
+
+      {/* Кровать */}
+      <IsoBox ox={ox} oy={oy} W={bedW} H={H * 0.17} D={D * 0.85}
+        face={c.face} top={c.top} side={c.side}
+      />
+      <IsoBox ox={ox + bedW * 0.04} oy={oy - H * 0.17} W={bedW * 0.92} H={H * 0.14} D={D * 0.82}
+        face="#f0eeea" top="#e8e6e0" side="#d5d2ca"
+      />
+      <IsoBox ox={ox} oy={oy - H * 0.17 - H * 0.14} W={bedW} H={H * 0.32} D={D * 0.15}
+        face={c.face} top={c.top} side={c.side}
+      />
+
+      {/* Стол */}
+      <IsoBox ox={ox + bedW + W * 0.04} oy={oy - H * 0.42} W={deskW} H={H * 0.07} D={D * 0.55}
+        face={c.top} top="#999" side={c.side}
+      />
+      {/* Ножки стола */}
+      {[0, deskW - 5].map((dx, i) => (
+        <IsoBox key={i} ox={ox + bedW + W * 0.04 + dx} oy={oy} W={5} H={H * 0.42} D={4}
+          face={c.handle} top={c.side} side={c.handle}
+        />
+      ))}
+      {/* Полка над столом */}
+      <IsoBox ox={ox + bedW + W * 0.04} oy={oy - H * 0.7} W={deskW} H={H * 0.05} D={D * 0.3}
+        face={c.face} top={c.top} side={c.side}
+      />
+    </svg>
+  );
+}
+
+// ─── ГЛАВНЫЙ КОМПОНЕНТ ────────────────────────────────────────────────────────
+export default function FurniturePreview({ type, material, style, width, height, depth }: Props) {
+  const c = useMemo(() => getC(material), [material]);
+
+  // Нормализуем размеры в пиксели SVG (viewBox 200)
+  // Диапазоны: W 60–400, H 60–280, D 30–90
+  const W = useMemo(() => {
+    if (type === "sofa")   return Math.min(Math.max((width  / 300) * 130, 55), 148);
+    if (type === "bedroom") return Math.min(Math.max((width  / 200) * 110, 70), 148);
+    return Math.min(Math.max((width  / 240) * 120, 55), 150);
+  }, [width, type]);
+
+  const H = useMemo(() => {
+    if (type === "sofa")   return Math.min(Math.max((depth  / 90) * 60,  38),  82);
+    if (type === "bedroom") return Math.min(Math.max((height / 220) * 95, 55), 130);
+    return Math.min(Math.max((height / 220) * 110, 50), 145);
+  }, [height, depth, type]);
+
+  const D = useMemo(() => {
+    if (type === "sofa")   return Math.min(Math.max((depth  / 90)  * 32, 18),  44);
+    return Math.min(Math.max((depth  / 65)  * 28, 14),  40);
+  }, [depth, type]);
 
   if (!type) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-white/20 py-8">
-        <svg viewBox="0 0 80 80" className="w-16 h-16 opacity-20">
-          <rect x="10" y="20" width="60" height="50" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
-          <rect x="20" y="10" width="40" height="15" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
-          <line x1="10" y1="45" x2="70" y2="45" stroke="currentColor" strokeWidth="1.5"/>
+      <div className="flex flex-col items-center justify-center h-32 gap-2 text-white/20">
+        <svg viewBox="0 0 64 64" className="w-10 h-10 opacity-20">
+          <rect x="8" y="18" width="48" height="38" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+          <rect x="16" y="8" width="32" height="14" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+          <line x1="8" y1="36" x2="56" y2="36" stroke="currentColor" strokeWidth="1.5"/>
         </svg>
-        <p className="text-[10px] tracking-widest uppercase">Выберите тип мебели</p>
+        <p className="text-[9px] tracking-widest uppercase">Выберите тип</p>
       </div>
     );
   }
 
+  const svgProps = { W, H, D, c };
+
   return (
-    <div className="relative transition-all duration-500">
-      <div className="aspect-[4/3] flex items-center justify-center px-2">
-        {renderFurniture()}
+    <div style={{ transition: "all 0.4s cubic-bezier(0.16,1,0.3,1)" }}>
+      <div className="aspect-[4/3] flex items-center justify-center">
+        {type === "kitchen"   && <KitchenSVG   {...svgProps} />}
+        {type === "wardrobe"  && <WardrobeSVG  {...svgProps} />}
+        {type === "sofa"      && <SofaSVG      {...svgProps} />}
+        {type === "bedroom"   && <BedroomSVG   {...svgProps} />}
+        {type === "hallway"   && <HalwaySVG    {...svgProps} />}
+        {type === "office"    && <OfficeSVG    {...svgProps} />}
+        {type === "bathroom"  && <BathroomSVG  {...svgProps} />}
+        {type === "childroom" && <ChildroomSVG {...svgProps} />}
       </div>
 
-      {/* Размеры */}
-      {(width || height || depth) && (
-        <div className="flex justify-between text-[10px] text-white/30 px-1 mt-1">
-          <span>Ш {width} см</span>
-          <span>В {height} см</span>
-          <span>Г {depth} см</span>
+      {/* Легенда материала */}
+      {material && (
+        <div className="flex items-center gap-2 px-1 mt-1">
+          <div className="w-3 h-3 rounded-sm flex-shrink-0 border border-white/10"
+            style={{ background: c.face }}
+          />
+          <span className="text-[9px] text-white/30 tracking-widest uppercase truncate">
+            {{
+              ldsp: "ЛДСП",
+              mdf: "МДФ",
+              massiv: "Массив дерева",
+              mdf_kraska: "МДФ эмаль",
+            }[material] ?? material}
+          </span>
+          <span className="ml-auto text-[9px] text-white/20 tabular-nums">
+            {width}×{height}×{depth}
+          </span>
         </div>
       )}
     </div>

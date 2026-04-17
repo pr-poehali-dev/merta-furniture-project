@@ -23,10 +23,12 @@ const TICKER_ITEMS = [
 
 export default function Index() {
   const navigate = useNavigate();
-  const [scrolled, setScrolled] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
   const [navVisible, setNavVisible] = useState(true);
   const [activeSection, setActiveSection] = useState("home");
   const lastScrollY = useRef(0);
+  const scrolled = scrollY > 60;
+  const navOpacity = Math.min(scrollY / 120, 1);
   const [mobileOpen, setMobileOpen] = useState(false);
 
 
@@ -62,7 +64,7 @@ export default function Index() {
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
-      setScrolled(y > 60);
+      setScrollY(y);
       if (y > lastScrollY.current + 8 && y > 120) {
         setNavVisible(false);
       } else if (y < lastScrollY.current - 8 || y < 80) {
@@ -289,7 +291,10 @@ export default function Index() {
     <div className="min-h-screen bg-[#f9f9f7] font-body text-[#111] page-enter overflow-x-hidden">
 
       {/* ── NAVBAR ── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 navbar-slide ${scrolled ? "navbar-scrolled" : "navbar-transparent"} ${navVisible ? "translate-y-0" : "-translate-y-full"}`}>
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 navbar-slide ${navVisible ? "translate-y-0" : "-translate-y-full"}`}
+        style={{ background: `rgba(15, 15, 15, ${navOpacity})`, backdropFilter: `blur(${navOpacity * 12}px)` }}
+      >
         <div className="max-w-7xl mx-auto px-5 md:px-10 h-16 flex items-center justify-between">
           <button
             onClick={() => scrollTo("#home")}

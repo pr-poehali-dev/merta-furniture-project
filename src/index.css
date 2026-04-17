@@ -68,22 +68,21 @@ html {
 }
 
 /* Navbar animation */
-.navbar-transparent {
-  background: rgba(250, 250, 250, 0);
-  backdrop-filter: blur(0px);
+.navbar-slide {
   transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
     background 0.4s ease,
     backdrop-filter 0.4s ease,
     box-shadow 0.4s ease;
+}
+.navbar-transparent {
+  background: rgba(250, 250, 250, 0);
+  backdrop-filter: blur(0px);
 }
 .navbar-scrolled {
   background: rgba(15, 15, 15, 0.97);
   backdrop-filter: blur(12px);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
-  transition:
-    background 0.4s ease,
-    backdrop-filter 0.4s ease,
-    box-shadow 0.4s ease;
 }
 
 /* Hero animation */

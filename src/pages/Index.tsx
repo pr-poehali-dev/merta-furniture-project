@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 
@@ -83,6 +83,8 @@ interface CartItem {
 export default function Index() {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
+  const [navVisible, setNavVisible] = useState(true);
+  const lastScrollY = useRef(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Catalog filters
@@ -118,8 +120,17 @@ export default function Index() {
   ];
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", onScroll);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 60);
+      if (y > lastScrollY.current + 8 && y > 120) {
+        setNavVisible(false);
+      } else if (y < lastScrollY.current - 8 || y < 80) {
+        setNavVisible(true);
+      }
+      lastScrollY.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
@@ -336,7 +347,7 @@ export default function Index() {
     <div className="min-h-screen bg-[#f9f9f7] font-body text-[#111] page-enter overflow-x-hidden">
 
       {/* ── NAVBAR ── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 ${scrolled ? "navbar-scrolled" : "navbar-transparent"}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 navbar-slide ${scrolled ? "navbar-scrolled" : "navbar-transparent"} ${navVisible ? "translate-y-0" : "-translate-y-full"}`}>
         <div className="max-w-7xl mx-auto px-5 md:px-10 h-16 flex items-center justify-between">
           <button
             onClick={() => scrollTo("#home")}

@@ -210,15 +210,12 @@ input[type="range"]::-webkit-slider-thumb {
     transform: translateY(0);
   }
 }
-.cart-open {
-  animation: slideRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.cart-open-mobile {
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-@media (max-width: 639px) {
+@media (min-width: 640px) {
   .cart-open-mobile {
-    animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-  .cart-open {
-    animation: none;
+    animation: slideRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }
 

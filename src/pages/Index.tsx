@@ -1203,7 +1203,7 @@ export default function Index() {
           <div className="absolute inset-0 bg-black/50" onClick={() => setCartOpen(false)} />
 
           {/* Desktop: right drawer | Mobile: bottom sheet */}
-          <div className="absolute bg-white flex flex-col bottom-0 left-0 right-0 max-h-[75dvh] rounded-t-xl cart-open-mobile sm:top-0 sm:bottom-0 sm:left-auto sm:right-0 sm:w-80 sm:max-h-full sm:rounded-none cart-open shadow-2xl">
+          <div className="absolute bg-white flex flex-col bottom-0 left-0 right-0 max-h-[75dvh] rounded-t-xl cart-open-mobile sm:top-0 sm:bottom-0 sm:left-auto sm:right-0 sm:w-80 sm:max-h-full sm:rounded-none shadow-2xl">
             {/* Handle — only mobile */}
             <div className="sm:hidden flex justify-center pt-2.5 pb-0.5 flex-shrink-0">
               <div className="w-8 h-1 bg-[#ddd] rounded-full" />

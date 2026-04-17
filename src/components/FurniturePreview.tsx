@@ -320,18 +320,21 @@ function Shadow({ bx, bz, cx, cz, rx, rz }: { bx:number; bz:number; cx:number; c
 
 // ─── EXTRAS-КОМПОНЕНТЫ ────────────────────────────────────────────────────────
 
-// LED-подсветка: полоса вдоль нижней кромки или под шкафами
+// LED-подсветка: яркая полоса с мягким свечением вниз
 function LedStrip({ bx, bz, wx, wy, wz, dw, color="#ffe8a0" }: {
   bx:number; bz:number; wx:number; wy:number; wz:number; dw:number; color?:string;
 }) {
   const A = iso(wx, wy, wz, bx, bz);
   const B = iso(wx+dw, wy, wz, bx, bz);
   return (
-    <g>
-      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke={color} strokeWidth="2.5" strokeLinecap="round" opacity="0.85"/>
-      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.5"/>
-      {/* Ореол */}
-      <line x1={A[0]} y1={A[1]+3} x2={B[0]} y2={B[1]+3} stroke={color} strokeWidth="5" strokeLinecap="round" opacity="0.15"/>
+    <g filter="url(#glow)">
+      {/* Широкий ореол */}
+      <line x1={A[0]} y1={A[1]+8} x2={B[0]} y2={B[1]+8} stroke={color} strokeWidth="18" strokeLinecap="round" opacity="0.12"/>
+      <line x1={A[0]} y1={A[1]+4} x2={B[0]} y2={B[1]+4} stroke={color} strokeWidth="10" strokeLinecap="round" opacity="0.22"/>
+      {/* Основная светящаяся лента */}
+      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke={color} strokeWidth="3" strokeLinecap="round" opacity="0.95"/>
+      {/* Белая сердцевина */}
+      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.85"/>
     </g>
   );
 }
@@ -433,7 +436,14 @@ function Scene({ w, h, children, m }: { w:number; h:number; children:React.React
   return (
     <svg viewBox={`0 0 ${w} ${h}`} fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
       <defs>
-        <filter id="sh"><feGaussianBlur stdDeviation="3"/></filter>
+        <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3.5"/>
+        </filter>
+        <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="2.5"/>
+          <feComponentTransfer><feFuncA type="linear" slope="1.4"/></feComponentTransfer>
+          <feComposite in2="SourceGraphic" operator="over"/>
+        </filter>
         <linearGradient id={`gF${id}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={m.f0}/><stop offset="100%" stopColor={m.f1}/>
         </linearGradient>
@@ -493,23 +503,57 @@ function KitchenModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
         </g>
       ))}
 
-      {/* Столешница */}
+      {/* Столешница — камень/кварц с текстурой */}
       <IsoBox bx={bx} bz={bz} wx={-0.05} wy={-0.04} wz={lh} dw={W+0.1} dd={D+0.05} dh={th} m={m}
-        faceC="#606060" topC={m.grain ? "#8a6030" : "#888"} sideC="#505050" />
+        faceC="#5a5a5a" topC={m.grain ? "#8a6030" : "#a8a8a8"} sideC="#484848" />
+      {/* Крапины на столешнице */}
+      {!m.grain && Array.from({length:18}).map((_,i) => {
+        const rx = 0.1 + Math.random()*(W-0.2);
+        const ry = Math.random()*D;
+        const pp = iso(rx, ry, lh+th, bx, bz);
+        return <circle key={i} cx={pp[0]} cy={pp[1]} r={0.5+Math.random()} fill="rgba(80,80,80,0.35)"/>;
+      })}
 
-      {/* Мойка */}
+      {/* Мойка — слева */}
       {(() => {
-        const sp = iso(W*0.2, D*0.5, lh+th+0.01, bx, bz);
-        return <ellipse cx={sp[0]} cy={sp[1]} rx={18} ry={7} fill="rgba(140,185,210,0.6)" stroke="#8ab0c8" strokeWidth="0.8"/>;
+        const sinkCX = W*0.2; const sinkCY = D*0.5;
+        const outerRx = Math.min(20, W*5.5); const outerRy = outerRx*0.45;
+        const sp = iso(sinkCX, sinkCY, lh+th+0.005, bx, bz);
+        return <g>
+          <ellipse cx={sp[0]} cy={sp[1]} rx={outerRx} ry={outerRy} fill="#9a9a9a" stroke="#6a6a6a" strokeWidth="0.6"/>
+          <ellipse cx={sp[0]} cy={sp[1]+1} rx={outerRx*0.82} ry={outerRy*0.78} fill="#3a4a55" />
+          <ellipse cx={sp[0]} cy={sp[1]+2} rx={outerRx*0.6} ry={outerRy*0.55} fill="#2a3a48" />
+          <ellipse cx={sp[0]-outerRx*0.3} cy={sp[1]-outerRy*0.1} rx={outerRx*0.18} ry={outerRy*0.15} fill="rgba(200,230,240,0.38)"/>
+          <circle cx={sp[0]+outerRx*0.3} cy={sp[1]+outerRy*0.1} r={1.8} fill="#1a1a1a"/>
+        </g>;
       })()}
       {/* Кран */}
       {(() => {
-        const c1 = iso(W*0.2, D*0.3, lh+th+0.01, bx, bz);
-        const c2 = iso(W*0.2, D*0.3, lh+th+0.22, bx, bz);
-        const c3 = iso(W*0.28, D*0.3, lh+th+0.22, bx, bz);
-        const c4 = iso(W*0.28, D*0.3, lh+th+0.08, bx, bz);
-        return <polyline points={`${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${c3[0]},${c3[1]} ${c4[0]},${c4[1]}`}
-          stroke="#a8a8a8" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>;
+        const baseCX = W*0.2; const baseY = D*0.22;
+        const b = iso(baseCX, baseY, lh+th+0.005, bx, bz);
+        const stem = iso(baseCX, baseY, lh+th+0.24, bx, bz);
+        const spout = iso(baseCX+0.1, baseY+0.15, lh+th+0.14, bx, bz);
+        return <g>
+          <ellipse cx={b[0]} cy={b[1]} rx={5} ry={2} fill="#a8a8a8" stroke="#707070" strokeWidth="0.4"/>
+          <path d={`M${b[0]},${b[1]} L${stem[0]},${stem[1]} Q${stem[0]+8},${stem[1]-2} ${spout[0]},${spout[1]}`}
+            stroke="#5a5a5a" strokeWidth="4" fill="none" strokeLinecap="round"/>
+          <path d={`M${b[0]},${b[1]} L${stem[0]},${stem[1]} Q${stem[0]+8},${stem[1]-2} ${spout[0]},${spout[1]}`}
+            stroke="#c8c8c8" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+        </g>;
+      })()}
+
+      {/* Варочная панель — справа от мойки */}
+      {(() => {
+        const sp = iso(W*0.55, D*0.5, lh+th+0.002, bx, bz);
+        return <g>
+          <ellipse cx={sp[0]} cy={sp[1]} rx={22} ry={9} fill="#1a1a1c" stroke="#2a2a2a" strokeWidth="0.5"/>
+          {[[-12,-3],[12,-3],[-12,3],[12,3]].map(([dx,dy],i) => (
+            <g key={i}>
+              <circle cx={sp[0]+dx} cy={sp[1]+dy} r={3} fill="#2a2a2e" stroke="#444" strokeWidth="0.4"/>
+              <circle cx={sp[0]+dx} cy={sp[1]+dy} r={1.5} fill="#404046"/>
+            </g>
+          ))}
+        </g>;
       })()}
 
       {/* Верхние шкафы */}
@@ -533,13 +577,32 @@ function KitchenModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
       })()}
 
       {/* EXTRAS */}
-      {/* LED-подсветка под верхними шкафами */}
+      {/* LED-подсветка под верхними шкафами — светит вниз на столешницу */}
       {extras.includes("led") && (
-        <LedStrip bx={bx} bz={bz} wx={0} wy={0.1} wz={lh+th+gap} dw={W} />
+        <LedStrip bx={bx} bz={bz} wx={0.05} wy={0.11} wz={lh+th+gap-0.01} dw={W-0.1} />
       )}
-      {/* Кухонный остров — блок сзади */}
+      {/* Доводчики — мягкий индикатор на ящиках */}
+      {extras.includes("soft") && Array.from({length:sections}).map((_,i) => {
+        const pp = iso(sw*i+sw*0.85, 0, lh*0.35, bx, bz);
+        return <g key={i}>
+          <circle cx={pp[0]} cy={pp[1]} r={1.8} fill="#4ade80" stroke="#22a04f" strokeWidth="0.4"/>
+          <circle cx={pp[0]-0.5} cy={pp[1]-0.5} r={0.6} fill="#ffffff"/>
+        </g>;
+      })}
+      {/* Ящик для мусора — выдвинут из нижнего шкафа */}
+      {extras.includes("waste") && (() => {
+        const binX = W*0.82;
+        const b = iso(binX, -0.15, lh*0.1, bx, bz);
+        const t = iso(binX, -0.15, lh*0.42, bx, bz);
+        return <g>
+          <IsoBox bx={bx} bz={bz} wx={binX-0.1} wy={-0.25} wz={0.05} dw={0.2} dd={0.25} dh={lh*0.4} m={m}
+            faceC="#3a4048" topC="#5a6068" sideC="#2a3038" />
+          <line x1={b[0]} y1={b[1]} x2={t[0]} y2={t[1]} stroke="#808890" strokeWidth="0.8"/>
+        </g>;
+      })()}
+      {/* Кухонный остров */}
       {extras.includes("island") && (
-        <KitchenIsland bx={bx} bz={bz} wx={W*0.1} wy={D+0.4} wz={0} dw={W*0.8} dd={D*0.7} dh={lh} m={m} />
+        <KitchenIsland bx={bx} bz={bz} wx={W*0.15} wy={D+0.5} wz={0} dw={W*0.7} dd={D*0.6} dh={lh} m={m} />
       )}
     </Scene>
   );
@@ -578,75 +641,100 @@ function WardrobeModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
           fill={darken(m.f0,20)} stroke="none"/>;
       })()}
 
-      {/* Раздвижные двери — с прозрачностью если есть наполнение */}
-      {/* Дверь 1 — передняя (сдвинута влево) */}
-      <IsoBox bx={bx} bz={bz} wx={0.03} wy={-0.04} wz={0.03} dw={W/2-0.02} dd={0.05} dh={H-0.06} m={m}
-        faceC={facade==="mirror" ? "#b8d8e8" : m.f0} topC={m.t0} sideC={m.s0}
-        opacity={shelves>0||rails>0||drawers>0 ? 0.45 : 1} />
-      {facade === "mirror" && (() => {
-        const a = iso(0.03,-0.04,0.03,bx,bz); const b = iso(W/2-0.02,-0.04,0.03,bx,bz);
-        const c = iso(W/2-0.02,-0.04,H-0.06,bx,bz); const d = iso(0.03,-0.04,H-0.06,bx,bz);
-        return <>
-          <polygon points={`${a[0]},${a[1]} ${b[0]},${b[1]} ${c[0]},${c[1]} ${d[0]},${d[1]}`} fill="rgba(190,225,245,0.35)"/>
-          <polygon points={`${a[0]},${a[1]} ${iso(W*0.12,-0.04,0.03,bx,bz)[0]},${iso(W*0.12,-0.04,0.03,bx,bz)[1]} ${iso(W*0.09,-0.04,H-0.06,bx,bz)[0]},${iso(W*0.09,-0.04,H-0.06,bx,bz)[1]} ${d[0]},${d[1]}`} fill="rgba(255,255,255,0.22)"/>
-        </>;
-      })()}
-      {/* Ручка двери 1 */}
-      {(() => {
-        const ha = iso(W/2-0.12,-0.06,H*0.44,bx,bz); const hb = iso(W/2-0.12,-0.06,H*0.56,bx,bz);
-        return <>
-          <line x1={ha[0]} y1={ha[1]} x2={hb[0]} y2={hb[1]} stroke={darken(m.handle,20)} strokeWidth="3" strokeLinecap="round"/>
-          <line x1={ha[0]} y1={ha[1]} x2={hb[0]} y2={hb[1]} stroke={lighten(m.handle,15)} strokeWidth="1.5" strokeLinecap="round"/>
-        </>;
-      })()}
+      {/* Вертикальный разделитель внутри шкафа */}
+      <IsoBox bx={bx} bz={bz} wx={W*0.48} wy={0.04} wz={0.04} dw={0.04} dd={D*0.9} dh={H-0.08} m={m}
+        faceC={darken(m.f0,12)} topC={m.t0} sideC={darken(m.s0,10)} />
 
-      {/* Дверь 2 — задняя (сдвинута вправо) */}
-      <IsoBox bx={bx} bz={bz} wx={W/2+0.02} wy={-0.02} wz={0.03} dw={W/2-0.05} dd={0.05} dh={H-0.06} m={m}
-        faceC={facade==="mirror" ? darken("#b8d8e8",10) : darken(m.f0,8)} topC={m.t1} sideC={m.s1}
-        opacity={shelves>0||rails>0||drawers>0 ? 0.45 : 1} />
-      {facade === "mirror" && (() => {
-        const a = iso(W/2+0.02,-0.02,0.03,bx,bz); const b = iso(W-0.05,-0.02,0.03,bx,bz);
-        const c = iso(W-0.05,-0.02,H-0.06,bx,bz); const d = iso(W/2+0.02,-0.02,H-0.06,bx,bz);
-        return <polygon points={`${a[0]},${a[1]} ${b[0]},${b[1]} ${c[0]},${c[1]} ${d[0]},${d[1]}`} fill="rgba(190,225,245,0.3)"/>;
-      })()}
-
-      {/* Наполнение — рисуется ПОВЕРХ дверей */}
-      {/* Штанги */}
-      {rails > 0 && <IsoRail bx={bx} bz={bz} wx={0.12} wy={D*0.5} wz={H*0.68} dw={W-0.24} m={m} />}
-      {rails > 1 && <IsoRail bx={bx} bz={bz} wx={0.12} wy={D*0.5} wz={H*0.42} dw={(W-0.24)*0.5} m={m} />}
-      {/* Полки — левая секция */}
+      {/* Внутренние элементы РИСУЮТСЯ ДО ДВЕРЕЙ — чтобы были на заднем плане */}
+      {rails > 0 && <IsoRail bx={bx} bz={bz} wx={0.14} wy={D*0.5} wz={H*0.68} dw={W*0.42} m={m} />}
+      {rails > 1 && <IsoRail bx={bx} bz={bz} wx={0.14} wy={D*0.5} wz={H*0.38} dw={W*0.42} m={m} />}
       {shelves > 0 && Array.from({length:Math.min(shelves,5)}).map((_,i) => (
-        <IsoShelf key={i} bx={bx} bz={bz} wx={0.08} wy={0.06} wz={H*0.12 + H*0.72*(i/(Math.min(shelves,5)+1))} dw={W*0.45} dd={D-0.12} m={m} />
+        <IsoShelf key={i} bx={bx} bz={bz} wx={0.08} wy={0.08} wz={H*0.1 + H*0.76*(i/(Math.min(shelves,5)+1))} dw={W*0.4} dd={D-0.14} m={m} />
       ))}
-      {/* Ящики — правая секция */}
-      {drawers > 0 && Array.from({length:Math.min(drawers,3)}).map((_,i) => (
-        <IsoDrawer key={i} bx={bx} bz={bz} wx={W*0.52} wy={0.02} wz={0.08+H*0.15*i} dw={W*0.44} dd={0.1} dh={H*0.13} m={m} />
+      {drawers > 0 && Array.from({length:Math.min(drawers,4)}).map((_,i) => (
+        <IsoDrawer key={i} bx={bx} bz={bz} wx={W*0.54} wy={0.04} wz={0.08+H*0.13*i} dw={W*0.4} dd={0.05} dh={H*0.11} m={m} />
       ))}
-      {/* Рельсы */}
-      {[0.005, H-0.02].map((z,i) => (
-        <IsoBox key={i} bx={bx} bz={bz} wx={0} wy={-0.05} wz={z} dw={W} dd={0.05} dh={0.025} m={m}
-          faceC="#888" topC="#aaa" sideC="#777" />
-      ))}
+
+      {/* Нижний рельс купе */}
+      <IsoBox bx={bx} bz={bz} wx={0} wy={-0.05} wz={0.005} dw={W} dd={0.05} dh={0.025} m={m}
+        faceC="#888" topC="#aaa" sideC="#777" />
+      {/* Верхний рельс */}
+      <IsoBox bx={bx} bz={bz} wx={0} wy={-0.05} wz={H-0.02} dw={W} dd={0.05} dh={0.025} m={m}
+        faceC="#888" topC="#aaa" sideC="#777" />
+
+      {/* Раздвижные двери — полупрозрачные если есть наполнение */}
+      {(() => {
+        const hasFill = shelves>0 || rails>0 || drawers>0;
+        const doorOp = hasFill ? 0.55 : 1;
+        return <>
+          {/* Дверь 1 — левая (передняя) */}
+          <IsoBox bx={bx} bz={bz} wx={0.03} wy={-0.04} wz={0.03} dw={W*0.5-0.04} dd={0.04} dh={H-0.06} m={m}
+            faceC={facade==="mirror" ? "#bcd8e8" : m.f0} topC={m.t0} sideC={darken(m.s0,5)}
+            opacity={doorOp} />
+          {facade === "mirror" && (() => {
+            const a = iso(0.03,-0.04,0.03,bx,bz); const b = iso(W*0.5-0.01,-0.04,0.03,bx,bz);
+            const c = iso(W*0.5-0.01,-0.04,H-0.06,bx,bz); const d = iso(0.03,-0.04,H-0.06,bx,bz);
+            return <>
+              <polygon points={`${a[0]},${a[1]} ${b[0]},${b[1]} ${c[0]},${c[1]} ${d[0]},${d[1]}`} fill="rgba(190,225,245,0.4)" opacity={doorOp}/>
+              <polygon points={`${a[0]},${a[1]} ${iso(W*0.15,-0.04,0.03,bx,bz)[0]},${iso(W*0.15,-0.04,0.03,bx,bz)[1]} ${iso(W*0.11,-0.04,H-0.06,bx,bz)[0]},${iso(W*0.11,-0.04,H-0.06,bx,bz)[1]} ${d[0]},${d[1]}`} fill="rgba(255,255,255,0.25)" opacity={doorOp}/>
+            </>;
+          })()}
+          {/* Профиль-ручка купе на двери 1 */}
+          <IsoBox bx={bx} bz={bz} wx={W*0.47} wy={-0.05} wz={0.03} dw={0.03} dd={0.03} dh={H-0.06} m={m}
+            faceC="#9aa0a8" topC="#c0c4cc" sideC="#707680" opacity={doorOp*0.9} />
+
+          {/* Дверь 2 — правая (задняя, сдвинута чуть назад) */}
+          <IsoBox bx={bx} bz={bz} wx={W*0.5+0.01} wy={-0.02} wz={0.03} dw={W*0.5-0.04} dd={0.04} dh={H-0.06} m={m}
+            faceC={facade==="mirror" ? darken("#bcd8e8",8) : darken(m.f0,6)} topC={m.t1} sideC={m.s1}
+            opacity={doorOp} />
+          {facade === "mirror" && (() => {
+            const a = iso(W*0.5+0.01,-0.02,0.03,bx,bz); const b = iso(W-0.03,-0.02,0.03,bx,bz);
+            const c = iso(W-0.03,-0.02,H-0.06,bx,bz); const d = iso(W*0.5+0.01,-0.02,H-0.06,bx,bz);
+            return <polygon points={`${a[0]},${a[1]} ${b[0]},${b[1]} ${c[0]},${c[1]} ${d[0]},${d[1]}`} fill="rgba(190,225,245,0.35)" opacity={doorOp}/>;
+          })()}
+          {/* Профиль-ручка на двери 2 */}
+          <IsoBox bx={bx} bz={bz} wx={W*0.5+0.01} wy={-0.03} wz={0.03} dw={0.03} dd={0.03} dh={H-0.06} m={m}
+            faceC="#9aa0a8" topC="#c0c4cc" sideC="#707680" opacity={doorOp*0.9} />
+        </>;
+      })()}
 
       {/* Плинтус */}
       <IsoBox bx={bx} bz={bz} wx={0} wy={0} wz={-0.04} dw={W} dd={D} dh={0.04} m={m}
         faceC={darken(m.f0,20)} topC={m.t1} sideC={darken(m.s0,20)} />
 
       {/* EXTRAS */}
-      {/* Подсветка — LED лента вдоль пола */}
-      {extras.includes("light") && (
-        <LedStrip bx={bx} bz={bz} wx={0.05} wy={-0.03} wz={0.01} dw={W-0.1} />
-      )}
-      {/* Зеркало внутри — на задней стенке левой секции */}
+      {/* Подсветка внутренняя — LED сверху и снизу */}
+      {extras.includes("light") && <>
+        <LedStrip bx={bx} bz={bz} wx={0.1} wy={0.08} wz={H-0.08} dw={W-0.2} color="#fff0c0" />
+        <LedStrip bx={bx} bz={bz} wx={0.1} wy={0.08} wz={0.08} dw={W-0.2} color="#fff0c0" />
+      </>}
+      {/* Зеркало внутри — на внутренней стороне левой двери (как в реальных шкафах) */}
       {extras.includes("mirror") && (
-        <WallMirror bx={bx} bz={bz} wx={W*0.05} wy={D-0.01} wz={H*0.1} dw={W*0.42} dh={H*0.75} />
+        <WallMirror bx={bx} bz={bz} wx={W*0.07} wy={D-0.03} wz={H*0.12} dw={W*0.36} dh={H*0.72} />
       )}
+      {/* Брючница — выдвижные штанги */}
+      {extras.includes("trouser") && Array.from({length:3}).map((_,i) => {
+        const z = H*0.35 + i*0.06;
+        const a = iso(W*0.58, D*0.2, z, bx, bz);
+        const b = iso(W*0.88, D*0.2, z, bx, bz);
+        return <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#b8c0c8" strokeWidth="1.4" strokeLinecap="round"/>;
+      })}
+      {/* Сейф */}
+      {extras.includes("safe") && (() => {
+        const pp = iso(W*0.55, D*0.3, H*0.1, bx, bz);
+        return <g>
+          <rect x={pp[0]-12} y={pp[1]-10} width={24} height={20} fill="#2a2e35" stroke="#1a1e25" strokeWidth="0.8" rx="1"/>
+          <circle cx={pp[0]+5} cy={pp[1]} r={3} fill="#404048" stroke="#1a1e25" strokeWidth="0.4"/>
+          <circle cx={pp[0]+5} cy={pp[1]} r={1.2} fill="#808088"/>
+          <line x1={pp[0]+5} y1={pp[1]-3} x2={pp[0]+5} y2={pp[1]+3} stroke="#c0c0c8" strokeWidth="0.6"/>
+        </g>;
+      })()}
     </Scene>
   );
 }
 
 // ─── ДИВАН ───────────────────────────────────────────────────────────────────
-function SofaModel({ W, H, D, m, facade, extras }: ModelProps) {
+function SofaModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
   const bx = 140, bz = 195;
 
   const legH = H*0.14; const seatH = H*0.35; const backH = H*0.48; const backD = D*0.22;
@@ -712,6 +800,37 @@ function SofaModel({ W, H, D, m, facade, extras }: ModelProps) {
       {extras.includes("mechanism") && (
         <SofaBed bx={bx} bz={bz} wx={armW} wy={0} wz={legH} dw={W-2*armW} dd={D} m={m} />
       )}
+      {/* Регулируемые подлокотники — индикатор-полоса */}
+      {extras.includes("armrests") && [0, W-armW].map((wx,i) => {
+        const pp = iso(wx+armW*0.5, -0.02, legH+armH*0.95, bx, bz);
+        return <g key={i}>
+          <rect x={pp[0]-4} y={pp[1]-1.5} width={8} height={3} fill="#404048" stroke="#202028" strokeWidth="0.3" rx="0.5"/>
+          <circle cx={pp[0]} cy={pp[1]} r={0.8} fill="#4ade80"/>
+        </g>;
+      })}
+
+      {/* FILLING */}
+      {/* Ящик для белья в основании */}
+      {(filling.storage ?? 0) > 0 && (
+        <IsoBox bx={bx} bz={bz} wx={armW+0.05} wy={0.02} wz={legH+0.05} dw={W-2*armW-0.1} dd={0.04} dh={seatH*0.35} m={m}
+          faceC={lighten(upC,2)} topC={lighten(upC,8)} sideC={darken(upC,5)} />
+      )}
+      {/* Боковые карманы — прямоугольники на подлокотниках */}
+      {(filling.pocket ?? 0) > 0 && [0, W-armW].slice(0, Math.min(filling.pocket ?? 0, 2)).map((wx,i) => {
+        const pp = iso(wx+armW*0.5, 0, legH+seatH+backH*0.15, bx, bz);
+        return <g key={i}>
+          <rect x={pp[0]-5} y={pp[1]-4} width={10} height={8} fill={darken(upC,18)} stroke={darken(upC,28)} strokeWidth="0.4" rx="0.5"/>
+          <line x1={pp[0]-4} y1={pp[1]-3} x2={pp[0]+4} y2={pp[1]-3} stroke={darken(upC,30)} strokeWidth="0.4"/>
+        </g>;
+      })}
+      {/* Подстаканник — вырез в подлокотнике */}
+      {(filling.cupholder ?? 0) > 0 && [armW*0.5, W-armW*0.5].slice(0, Math.min(filling.cupholder ?? 0, 2)).map((wx,i) => {
+        const pp = iso(wx, D*0.5, legH+armH, bx, bz);
+        return <g key={i}>
+          <ellipse cx={pp[0]} cy={pp[1]} rx={4} ry={2} fill={darken(upC,25)}/>
+          <ellipse cx={pp[0]} cy={pp[1]+0.5} rx={3.2} ry={1.5} fill={darken(upC,40)}/>
+        </g>;
+      })}
     </Scene>
   );
 }

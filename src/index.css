@@ -193,32 +193,49 @@ input[type="range"]::-webkit-slider-thumb {
   animation: slideDown 0.3s ease forwards;
 }
 
+/* Cart sheet — adaptive height */
+.cart-sheet {
+  max-height: 80dvh;
+}
+@media (max-height: 500px) {
+  /* горизонтальный телефон */
+  .cart-sheet {
+    max-height: 95dvh;
+  }
+}
+@media (min-width: 640px) {
+  .cart-sheet {
+    max-height: 100dvh;
+  }
+}
+
 /* Cart drawer */
 @keyframes slideRight {
   from {
     transform: translateX(100%);
+    opacity: 0;
   }
   to {
     transform: translateX(0);
+    opacity: 1;
   }
 }
-@keyframes slideUp {
+@keyframes fadeUp {
   from {
-    transform: translateY(100%);
+    transform: translateY(16px);
+    opacity: 0;
   }
   to {
     transform: translateY(0);
+    opacity: 1;
   }
 }
-.cart-open {
-  animation: slideRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.cart-open-mobile {
+  animation: fadeUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-@media (max-width: 639px) {
+@media (min-width: 640px) {
   .cart-open-mobile {
-    animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-  .cart-open {
-    animation: none;
+    animation: slideRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }
 

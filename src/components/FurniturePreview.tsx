@@ -3,6 +3,7 @@ import { useMemo } from "react";
 interface Props {
   type: string;
   material: string;
+  color?: string;       // hex цвет выбранного цвета
   style: string;
   width: number;
   height: number;
@@ -493,9 +494,34 @@ const MAT_NAMES: Record<string,string> = {
   ldsp:"ЛДСП", mdf:"МДФ", massiv:"Массив дерева", mdf_kraska:"МДФ + эмаль",
 };
 
-export default function FurniturePreview({ type, material, style, width, height, depth }: Props) {
+// Смешивает базовый материал с выбранным цветом
+function applyColor(base: ReturnType<typeof getM>, hex?: string): ReturnType<typeof getM> {
+  if (!hex) return base;
+  // Осветляем/затемняем hex для трёх граней
+  const darken = (h: string, amt: number) => {
+    const n = parseInt(h.replace("#",""), 16);
+    const r = Math.max(0, Math.min(255, (n >> 16) - amt));
+    const g = Math.max(0, Math.min(255, ((n >> 8) & 0xff) - amt));
+    const b = Math.max(0, Math.min(255, (n & 0xff) - amt));
+    return `#${((r<<16)|(g<<8)|b).toString(16).padStart(6,"0")}`;
+  };
+  return {
+    ...base,
+    f0: hex,
+    f1: darken(hex, 30),
+    t0: darken(hex, 18),
+    t1: darken(hex, 45),
+    s0: darken(hex, 38),
+    s1: darken(hex, 60),
+    edge: darken(hex, 70),
+    handle: darken(hex, 80),
+  };
+}
+
+export default function FurniturePreview({ type, material, color, style, width, height, depth }: Props) {
   const id = useMemo(() => `fp${_uid++}`, []);
-  const m  = useMemo(() => getM(material), [material]);
+  const mBase = useMemo(() => getM(material), [material]);
+  const m = useMemo(() => applyColor(mBase, color), [mBase, color]);
 
   const W = useMemo(() => {
     const base = type === "sofa" ? 220 : type === "bedroom" ? 190 : 200;
@@ -545,7 +571,7 @@ export default function FurniturePreview({ type, material, style, width, height,
       {material && (
         <div className="flex items-center gap-2 px-1 mt-1 pb-1">
           <div className="w-3 h-3 rounded-sm flex-shrink-0 ring-1 ring-white/10"
-            style={{ background: m.f0 }} />
+            style={{ background: color ?? m.f0 }} />
           <span className="text-[9px] text-white/30 tracking-widest uppercase">
             {MAT_NAMES[material] ?? material}
           </span>

@@ -84,6 +84,21 @@ export default function Index() {
   const lastScrollY = useRef(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Cart
+  const [cart, setCart] = useState<{id: number; name: string; price: number; img: string; category: string; qty: number}[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const cartCount = cart.reduce((s, i) => s + i.qty, 0);
+  const cartTotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+
+  const addToCart = (p: typeof PRODUCTS[0]) => {
+    setCart((prev) => {
+      const ex = prev.find((i) => i.id === p.id);
+      if (ex) return prev.map((i) => i.id === p.id ? { ...i, qty: i.qty + 1 } : i);
+      return [...prev, { id: p.id, name: p.name, price: p.price, img: p.img, category: p.category, qty: 1 }];
+    });
+  };
+  const removeFromCart = (id: number) => setCart((prev) => prev.filter((i) => i.id !== id));
+
   // Catalog filters
   const [filterCategory, setFilterCategory] = useState("Все");
   const [filterMaterial, setFilterMaterial] = useState("Все");
@@ -383,6 +398,17 @@ export default function Index() {
               <Icon name="MessageCircle" size={14} />
               WhatsApp
             </a>
+            <button
+              onClick={() => setCartOpen(true)}
+              className={`relative transition-colors duration-500 ${scrolled ? "text-white" : "text-[#111]"}`}
+            >
+              <Icon name="ShoppingBag" size={20} />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-[#c8a96e] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-semibold">
+                  {cartCount}
+                </span>
+              )}
+            </button>
             <button
               className={`md:hidden transition-colors duration-500 ${scrolled ? "text-white" : "text-[#111]"}`}
               onClick={() => setMobileOpen((v) => !v)}
@@ -689,7 +715,13 @@ export default function Index() {
                   <div className="p-3 md:p-5 flex flex-col">
                     <p className="text-[10px] tracking-widest uppercase text-[#999] mb-1 truncate">{p.category}</p>
                     <h3 className="font-display text-base md:text-2xl font-light mb-1 leading-tight">{p.name}</h3>
-                    <p className="font-body font-semibold text-sm">от {formatPrice(p.price)}</p>
+                    <p className="font-body font-semibold text-sm mb-3">от {formatPrice(p.price)}</p>
+                    <button
+                      onClick={() => addToCart(p)}
+                      className="w-full flex items-center justify-center gap-1.5 text-[10px] tracking-wider uppercase border border-[#111] py-2 hover:bg-[#111] hover:text-white transition-colors duration-300"
+                    >
+                      <Icon name="Plus" size={11} /> В корзину
+                    </button>
                   </div>
                 </div>
               ))}
@@ -1147,6 +1179,73 @@ export default function Index() {
           </div>
         </div>
       </footer>
+
+      {/* ── CART ── */}
+      {cartOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="flex-1 bg-black/50" onClick={() => setCartOpen(false)} />
+          <div className="w-full max-w-sm bg-white flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#eee]">
+              <div className="flex items-center gap-2">
+                <span className="font-display text-xl font-light">Корзина</span>
+                {cartCount > 0 && (
+                  <span className="bg-[#111] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">{cartCount}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                {cart.length > 0 && (
+                  <button onClick={() => setCart([])} className="text-[10px] tracking-wider uppercase text-[#bbb] hover:text-red-400 transition-colors">
+                    Очистить
+                  </button>
+                )}
+                <button onClick={() => setCartOpen(false)}>
+                  <Icon name="X" size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Items */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {cart.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-[#ccc] gap-3">
+                  <Icon name="ShoppingBag" size={36} />
+                  <p className="text-[11px] tracking-widest uppercase">Корзина пуста</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {cart.map((item) => (
+                    <div key={item.id} className="flex gap-3 items-center border-b border-[#f5f5f5] pb-4">
+                      <img src={item.img} alt={item.name} className="w-14 h-14 object-cover bg-[#eee] flex-shrink-0 rounded" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium leading-tight truncate">{item.name}</p>
+                        <p className="text-[10px] text-[#999] mt-0.5">{item.category}</p>
+                        <p className="text-sm font-semibold mt-1">{formatPrice(item.price * item.qty)}</p>
+                      </div>
+                      <button onClick={() => removeFromCart(item.id)} className="text-[#ccc] hover:text-[#111] transition-colors p-1 flex-shrink-0">
+                        <Icon name="Trash2" size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {cart.length > 0 && (
+              <div className="px-5 py-4 border-t border-[#eee]">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-[11px] tracking-widest uppercase text-[#999]">Итого</span>
+                  <span className="font-display text-xl">{formatPrice(cartTotal)}</span>
+                </div>
+                <button className="w-full bg-[#111] text-white py-3.5 text-[11px] tracking-widest uppercase hover:bg-[#333] transition-colors">
+                  Оформить заказ
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );

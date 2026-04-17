@@ -1236,18 +1236,25 @@ export default function Index() {
             </div>
 
             {/* Footer */}
-            {cart.length > 0 && (
-              <div className="px-5 py-4 border-t border-[#eee] flex-shrink-0" style={{paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'}}>
-
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-[11px] tracking-widest uppercase text-[#999]">Итого</span>
-                  <span className="font-display text-xl">{formatPrice(cartTotal)}</span>
-                </div>
-                <button className="w-full bg-[#111] text-white py-3.5 text-[11px] tracking-widest uppercase hover:bg-[#333] transition-colors">
-                  Оформить заказ
-                </button>
-              </div>
-            )}
+            <div className="px-5 py-4 border-t border-[#eee] flex-shrink-0" style={{paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'}}>
+              {cart.length > 0 && (
+                <>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-[11px] tracking-widest uppercase text-[#999]">Итого</span>
+                    <span className="font-display text-xl">{formatPrice(cartTotal)}</span>
+                  </div>
+                  <button className="w-full bg-[#111] text-white py-3.5 text-[11px] tracking-widest uppercase hover:bg-[#333] transition-colors mb-3">
+                    Оформить заказ
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => setCartOpen(false)}
+                className="w-full border border-[#ddd] py-3 text-[11px] tracking-widest uppercase text-[#999] hover:border-[#111] hover:text-[#111] transition-colors"
+              >
+                Закрыть
+              </button>
+            </div>
           </div>
         </div>
       )}

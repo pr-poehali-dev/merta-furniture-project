@@ -146,6 +146,30 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
+    const isLocked = selectedProduct || cartOpen;
+    if (isLocked) {
+      const y = window.scrollY;
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${y}px`;
+      document.body.style.width = "100%";
+    } else {
+      const top = document.body.style.top;
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      if (top) window.scrollTo(0, parseInt(top || "0") * -1);
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+    };
+  }, [selectedProduct, cartOpen]);
+
+  useEffect(() => {
     const ids = ["home", "catalog", "recommendations", "calculator", "about", "contacts"];
     const observers = ids.map((id) => {
       const el = document.getElementById(id);

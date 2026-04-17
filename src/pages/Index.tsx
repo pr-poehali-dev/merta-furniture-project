@@ -84,6 +84,7 @@ export default function Index() {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [navVisible, setNavVisible] = useState(true);
+  const [activeSection, setActiveSection] = useState("home");
   const lastScrollY = useRef(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -132,6 +133,21 @@ export default function Index() {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const ids = ["home", "catalog", "recommendations", "calculator", "about", "contacts"];
+    const observers = ids.map((id) => {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActiveSection(id); },
+        { rootMargin: "-40% 0px -55% 0px", threshold: 0 }
+      );
+      obs.observe(el);
+      return obs;
+    });
+    return () => observers.forEach((o) => o?.disconnect());
   }, []);
 
   const filtered = PRODUCTS.filter((p) => {
@@ -357,17 +373,23 @@ export default function Index() {
           </button>
 
           <div className="hidden md:flex items-center gap-7">
-            {navLinks.map((l) => (
-              <button
-                key={l.href}
-                onClick={() => scrollTo(l.href)}
-                className={`text-[11px] tracking-widest uppercase font-body transition-colors duration-500 ${
-                  scrolled ? "text-[#aaa] hover:text-white" : "text-[#555] hover:text-[#111]"
-                }`}
-              >
-                {l.label}
-              </button>
-            ))}
+            {navLinks.map((l) => {
+              const isActive = activeSection === l.href.replace("#", "");
+              return (
+                <button
+                  key={l.href}
+                  onClick={() => scrollTo(l.href)}
+                  className={`relative text-[11px] tracking-widest uppercase font-body transition-colors duration-300 ${
+                    isActive
+                      ? scrolled ? "text-white" : "text-[#111]"
+                      : scrolled ? "text-[#666] hover:text-white" : "text-[#999] hover:text-[#111]"
+                  }`}
+                >
+                  {l.label}
+                  <span className={`absolute -bottom-1 left-0 h-px bg-current transition-all duration-300 ${isActive ? "w-full" : "w-0"}`} />
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex items-center gap-4">

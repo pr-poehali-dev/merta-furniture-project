@@ -75,10 +75,6 @@ const TICKER_ITEMS = [
   "СБОРКА В ПОДАРОК",
 ];
 
-interface CartItem {
-  product: (typeof PRODUCTS)[0];
-  qty: number;
-}
 
 export default function Index() {
   const navigate = useNavigate();
@@ -94,10 +90,6 @@ export default function Index() {
   const [filterMaxPrice, setFilterMaxPrice] = useState(300000);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const activeFiltersCount = (filterCategory !== "Все" ? 1 : 0) + (filterMaterial !== "Все" ? 1 : 0) + (filterMaxPrice < 300000 ? 1 : 0);
-
-  // Cart
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [cartOpen, setCartOpen] = useState(false);
 
   // Calculator — step-by-step
   const [calcStep, setCalcStep] = useState(0);
@@ -136,15 +128,6 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    if (cartOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
-  }, [cartOpen]);
-
-  useEffect(() => {
     const ids = ["home", "catalog", "recommendations", "calculator", "about", "contacts"];
     const observers = ids.map((id) => {
       const el = document.getElementById(id);
@@ -165,21 +148,6 @@ export default function Index() {
     const priceOk = p.price <= filterMaxPrice;
     return catOk && matOk && priceOk;
   });
-
-  const addToCart = (product: (typeof PRODUCTS)[0]) => {
-    setCart((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
-      if (existing)
-        return prev.map((i) =>
-          i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i
-        );
-      return [...prev, { product, qty: 1 }];
-    });
-  };
-  const removeFromCart = (id: number) =>
-    setCart((prev) => prev.filter((i) => i.product.id !== id));
-  const cartTotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
-  const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
   // Calculator config
   const CALC_TYPES = [
@@ -415,17 +383,6 @@ export default function Index() {
               <Icon name="MessageCircle" size={14} />
               WhatsApp
             </a>
-            <button
-              onClick={() => setCartOpen(true)}
-              className={`relative flex items-center gap-1 transition-colors duration-500 ${scrolled ? "text-white" : "text-[#111]"}`}
-            >
-              <Icon name="ShoppingBag" size={20} />
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-[#111] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-                  {cartCount}
-                </span>
-              )}
-            </button>
             <button
               className={`md:hidden transition-colors duration-500 ${scrolled ? "text-white" : "text-[#111]"}`}
               onClick={() => setMobileOpen((v) => !v)}
@@ -732,13 +689,7 @@ export default function Index() {
                   <div className="p-3 md:p-5 flex flex-col">
                     <p className="text-[10px] tracking-widest uppercase text-[#999] mb-1 truncate">{p.category}</p>
                     <h3 className="font-display text-base md:text-2xl font-light mb-1 leading-tight">{p.name}</h3>
-                    <p className="font-body font-semibold text-sm mb-3">от {formatPrice(p.price)}</p>
-                    <button
-                      onClick={() => addToCart(p)}
-                      className="w-full flex items-center justify-center gap-1.5 text-[10px] tracking-wider uppercase border border-[#111] py-2 hover:bg-[#111] hover:text-white transition-colors duration-300"
-                    >
-                      <Icon name="Plus" size={11} /> В корзину
-                    </button>
+                    <p className="font-body font-semibold text-sm">от {formatPrice(p.price)}</p>
                   </div>
                 </div>
               ))}
@@ -1197,79 +1148,6 @@ export default function Index() {
         </div>
       </footer>
 
-      {/* ── CART DRAWER ── */}
-      {cartOpen && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setCartOpen(false)} />
-
-          {/* Mobile: bottom sheet | Desktop: right drawer */}
-          <div className="cart-sheet absolute bg-white flex flex-col bottom-0 left-0 right-0 rounded-t-2xl cart-open-mobile sm:top-0 sm:bottom-0 sm:left-auto sm:right-0 sm:w-80 sm:rounded-none shadow-2xl">
-            {/* Handle — only mobile */}
-            <div className="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
-              <div className="w-8 h-1 bg-[#ddd] rounded-full" />
-            </div>
-
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#eee] flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-display text-xl font-light">Корзина</h3>
-                {cartCount > 0 && (
-                  <span className="bg-[#111] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">{cartCount}</span>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                {cart.length > 0 && (
-                  <button onClick={() => setCart([])} className="text-[10px] tracking-wider uppercase text-[#bbb] hover:text-[#e33] transition-colors">
-                    Очистить
-                  </button>
-                )}
-                <button onClick={() => setCartOpen(false)} className="p-1 -mr-1">
-                  <Icon name="X" size={18} />
-                </button>
-              </div>
-            </div>
-
-            {/* Items — скролл только внутри */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3">
-              {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-[#ccc] gap-3 py-10">
-                  <Icon name="ShoppingBag" size={32} />
-                  <p className="text-[11px] tracking-widest uppercase">Корзина пуста</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {cart.map((item) => (
-                    <div key={item.product.id} className="flex gap-3 items-center border-b border-[#f5f5f5] pb-3">
-                      <img src={item.product.img} alt={item.product.name} className="w-12 h-12 object-cover bg-[#eee] flex-shrink-0 rounded" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium leading-tight truncate">{item.product.name}</p>
-                        <p className="text-[10px] text-[#999] mt-0.5">{item.product.category}</p>
-                        <p className="text-sm font-semibold mt-0.5">{formatPrice(item.product.price * item.qty)}</p>
-                      </div>
-                      <button onClick={() => removeFromCart(item.product.id)} className="text-[#ccc] hover:text-[#111] transition-colors p-2 flex-shrink-0">
-                        <Icon name="Trash2" size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            {cart.length > 0 && (
-              <div className="px-4 py-3 border-t border-[#eee] flex-shrink-0" style={{paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'}}>
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-[11px] tracking-widest uppercase text-[#999]">Итого</span>
-                  <span className="font-display text-lg">{formatPrice(cartTotal)}</span>
-                </div>
-                <button className="w-full bg-[#111] text-white py-3 text-[11px] tracking-widest uppercase hover:bg-[#333] transition-colors">
-                  Оформить заказ
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

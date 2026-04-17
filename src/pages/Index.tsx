@@ -88,8 +88,7 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    const isLocked = selectedProduct || cartOpen;
-    if (isLocked) {
+    if (cartOpen) {
       const y = window.scrollY;
       document.body.style.overflow = "hidden";
       document.body.style.position = "fixed";
@@ -109,7 +108,7 @@ export default function Index() {
       document.body.style.top = "";
       document.body.style.width = "";
     };
-  }, [selectedProduct, cartOpen]);
+  }, [cartOpen]);
 
   useEffect(() => {
     const ids = ["home", "catalog", "recommendations", "calculator", "about", "contacts"];

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import FurnitureCalculator from "@/components/FurnitureCalculator";
+
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
@@ -461,18 +461,6 @@ export default function Index() {
               ))}
             </div>
           )}
-        </div>
-      </section>
-
-      {/* ── CALCULATOR ── */}
-      <section id="calculator" className="py-12 md:py-24 bg-[#f9f9f7]">
-        <div className="max-w-7xl mx-auto px-5 md:px-10">
-          <div className="mb-8 md:mb-12">
-            <p className="text-[10px] tracking-[0.3em] uppercase text-[#999] mb-3">Онлайн-расчёт</p>
-            <h2 className="font-display text-[clamp(2rem,5vw,4rem)] font-light">Конструктор мебели</h2>
-          </div>
-          <FurnitureCalculator />
-
         </div>
       </section>
 

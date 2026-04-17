@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { PRODUCTS } from "@/data/products";
 import Icon from "@/components/ui/icon";
@@ -8,6 +9,8 @@ const formatPrice = (n: number) =>
 export default function Product() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  useEffect(() => { window.scrollTo(0, 0); }, [id]);
   const product = PRODUCTS.find((p) => p.id === Number(id));
 
   if (!product) {

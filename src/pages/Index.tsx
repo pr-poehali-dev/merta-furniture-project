@@ -29,20 +29,7 @@ export default function Index() {
   const lastScrollY = useRef(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Cart
-  const [cart, setCart] = useState<{id: number; name: string; price: number; img: string; category: string; qty: number}[]>([]);
-  const [cartOpen, setCartOpen] = useState(false);
-  const cartCount = cart.reduce((s, i) => s + i.qty, 0);
-  const cartTotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
 
-  const addToCart = (p: typeof PRODUCTS[0]) => {
-    setCart((prev) => {
-      const ex = prev.find((i) => i.id === p.id);
-      if (ex) return prev.map((i) => i.id === p.id ? { ...i, qty: i.qty + 1 } : i);
-      return [...prev, { id: p.id, name: p.name, price: p.price, img: p.img, category: p.category, qty: 1 }];
-    });
-  };
-  const removeFromCart = (id: number) => setCart((prev) => prev.filter((i) => i.id !== id));
 
   // Catalog filters
   const [filterCategory, setFilterCategory] = useState("Все");
@@ -87,28 +74,7 @@ export default function Index() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    if (cartOpen) {
-      const y = window.scrollY;
-      document.body.style.overflow = "hidden";
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${y}px`;
-      document.body.style.width = "100%";
-    } else {
-      const top = document.body.style.top;
-      document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      if (top) window.scrollTo(0, parseInt(top || "0") * -1);
-    }
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-    };
-  }, [cartOpen]);
+
 
   useEffect(() => {
     const ids = ["home", "catalog", "recommendations", "calculator", "about", "contacts"];
@@ -366,17 +332,7 @@ export default function Index() {
               <Icon name="MessageCircle" size={14} />
               WhatsApp
             </a>
-            <button
-              onClick={() => setCartOpen(true)}
-              className={`relative transition-colors duration-500 ${scrolled ? "text-white" : "text-[#111]"}`}
-            >
-              <Icon name="ShoppingBag" size={20} />
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-[#c8a96e] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-semibold">
-                  {cartCount}
-                </span>
-              )}
-            </button>
+
             <button
               className={`md:hidden transition-colors duration-500 ${scrolled ? "text-white" : "text-[#111]"}`}
               onClick={() => setMobileOpen((v) => !v)}
@@ -503,12 +459,7 @@ export default function Index() {
                 <h3 className="font-display text-lg md:text-2xl font-light leading-tight">{p.name}</h3>
                 <p className="font-body text-sm font-semibold mt-1">от {formatPrice(p.price)}</p>
               </div>
-              <button
-                onClick={() => addToCart(p)}
-                className="w-full border border-[#111] py-2.5 text-[10px] tracking-widest uppercase hover:bg-[#111] hover:text-white transition-colors duration-300"
-              >
-                В корзину
-              </button>
+
             </div>
           ))}
         </div>
@@ -683,13 +634,7 @@ export default function Index() {
                   <div className="p-3 md:p-5 flex flex-col">
                     <p className="text-[10px] tracking-widest uppercase text-[#999] mb-1 truncate">{p.category}</p>
                     <h3 className="font-display text-base md:text-2xl font-light mb-1 leading-tight">{p.name}</h3>
-                    <p className="font-body font-semibold text-sm mb-3">от {formatPrice(p.price)}</p>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); addToCart(p); }}
-                      className="w-full flex items-center justify-center gap-1.5 text-[10px] tracking-wider uppercase border border-[#111] py-2 hover:bg-[#111] hover:text-white transition-colors duration-300"
-                    >
-                      <Icon name="Plus" size={11} /> В корзину
-                    </button>
+                    <p className="font-body font-semibold text-sm">от {formatPrice(p.price)}</p>
                   </div>
                 </div>
               ))}
@@ -1150,84 +1095,7 @@ export default function Index() {
 
 
 
-      {/* ── CART ── */}
-      {cartOpen && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setCartOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl flex flex-col max-h-[70svh] md:top-0 md:bottom-0 md:left-auto md:right-0 md:w-96 md:max-h-full md:rounded-none">
-            {/* Handle — mobile only */}
-            <div className="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
-              <div className="w-8 h-1 bg-[#ddd] rounded-full" />
-            </div>
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#eee] flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="font-display text-lg font-light">Корзина</span>
-                {cartCount > 0 && (
-                  <span className="bg-[#111] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">{cartCount}</span>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                {cart.length > 0 && (
-                  <button onClick={() => setCart([])} className="text-[10px] tracking-wider uppercase text-[#bbb] hover:text-red-400 transition-colors">
-                    Очистить
-                  </button>
-                )}
-                <button onClick={() => setCartOpen(false)} className="p-1">
-                  <Icon name="X" size={18} />
-                </button>
-              </div>
-            </div>
 
-            {/* Items */}
-            <div className="flex-1 overflow-y-auto px-4 py-3">
-              {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-[#ccc] gap-3 py-6">
-                  <Icon name="ShoppingBag" size={28} />
-                  <p className="text-[11px] tracking-widest uppercase">Корзина пуста</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {cart.map((item) => (
-                    <div key={item.id} className="flex gap-3 items-center border-b border-[#f5f5f5] pb-3">
-                      <img src={item.img} alt={item.name} className="w-11 h-11 object-cover bg-[#eee] flex-shrink-0 rounded" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium leading-tight truncate">{item.name}</p>
-                        <p className="text-[10px] text-[#999] mt-0.5">{item.category}</p>
-                        <p className="text-xs font-semibold mt-0.5">{formatPrice(item.price * item.qty)}</p>
-                      </div>
-                      <button onClick={() => removeFromCart(item.id)} className="text-[#ccc] hover:text-[#111] transition-colors p-1 flex-shrink-0">
-                        <Icon name="Trash2" size={13} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="px-4 py-3 border-t border-[#eee] flex-shrink-0" style={{paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'}}>
-              {cart.length > 0 && (
-                <>
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-[10px] tracking-widest uppercase text-[#999]">Итого</span>
-                    <span className="font-display text-lg">{formatPrice(cartTotal)}</span>
-                  </div>
-                  <button className="w-full bg-[#111] text-white py-3 text-[10px] tracking-widest uppercase hover:bg-[#333] transition-colors mb-2">
-                    Оформить заказ
-                  </button>
-                </>
-              )}
-              <button
-                onClick={() => setCartOpen(false)}
-                className="w-full border border-[#ddd] py-2.5 text-[10px] tracking-widest uppercase text-[#999] hover:border-[#111] hover:text-[#111] transition-colors"
-              >
-                Закрыть
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

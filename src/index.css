@@ -193,6 +193,22 @@ input[type="range"]::-webkit-slider-thumb {
   animation: slideDown 0.3s ease forwards;
 }
 
+/* Cart sheet — adaptive height */
+.cart-sheet {
+  max-height: 80dvh;
+}
+@media (max-height: 500px) {
+  /* горизонтальный телефон */
+  .cart-sheet {
+    max-height: 95dvh;
+  }
+}
+@media (min-width: 640px) {
+  .cart-sheet {
+    max-height: 100dvh;
+  }
+}
+
 /* Cart drawer */
 @keyframes slideRight {
   from {

@@ -211,7 +211,7 @@ export default function Calculator() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f9f9f7] font-body text-[#111] page-enter">
+    <div className="min-h-screen bg-[#f9f9f7] font-body text-[#111] page-enter overflow-x-hidden">
 
       {/* ── NAVBAR ── */}
       <nav className={`fixed top-0 left-0 right-0 z-50 ${scrolled ? "navbar-scrolled" : "navbar-transparent bg-white border-b border-[#eee]"}`}>
@@ -286,7 +286,7 @@ export default function Calculator() {
 
       {/* ── HEADER ── */}
       <div className="pt-16 bg-[#111] text-white">
-        <div className="max-w-7xl mx-auto px-5 md:px-10 py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-5 md:px-10 py-10 md:py-20">
           <button
             onClick={() => navigate("/")}
             className="flex items-center gap-2 text-white/40 hover:text-white/80 text-[11px] tracking-widest uppercase mb-8 transition-colors"
@@ -294,7 +294,7 @@ export default function Calculator() {
             <Icon name="ArrowLeft" size={14} /> На главную
           </button>
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-4">Онлайн-расчёт</p>
-          <h1 className="font-display text-[clamp(2.8rem,6vw,5rem)] font-light leading-none">
+          <h1 className="font-display text-[clamp(2rem,6vw,5rem)] font-light leading-none">
             Калькулятор цены
           </h1>
           <p className="text-white/50 mt-4 text-[15px] max-w-xl">
@@ -304,7 +304,7 @@ export default function Calculator() {
       </div>
 
       {/* ── CALCULATOR BODY ── */}
-      <div className="max-w-7xl mx-auto px-5 md:px-10 py-16">
+      <div className="max-w-7xl mx-auto px-5 md:px-10 py-8 md:py-16">
         {!calcDone ? (
           <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -326,7 +326,7 @@ export default function Calculator() {
                       }`}>
                         {i < calcStep ? <Icon name="Check" size={12} /> : i + 1}
                       </div>
-                      <span className={`text-[10px] tracking-wider uppercase whitespace-nowrap ${i === calcStep ? "text-[#111] font-semibold" : i < calcStep ? "text-[#555]" : "text-[#bbb]"}`}>
+                      <span className={`hidden sm:inline text-[10px] tracking-wider uppercase whitespace-nowrap ${i === calcStep ? "text-[#111] font-semibold" : i < calcStep ? "text-[#555]" : "text-[#bbb]"}`}>
                         {label}
                       </span>
                     </button>

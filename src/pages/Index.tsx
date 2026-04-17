@@ -331,7 +331,7 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f9f9f7] font-body text-[#111] page-enter">
+    <div className="min-h-screen bg-[#f9f9f7] font-body text-[#111] page-enter overflow-x-hidden">
 
       {/* ── NAVBAR ── */}
       <nav className={`fixed top-0 left-0 right-0 z-50 ${scrolled ? "navbar-scrolled" : "navbar-transparent"}`}>
@@ -429,7 +429,7 @@ export default function Index() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-[#f9f9f7]" />
         </div>
 
-        <div className="relative z-10 flex flex-col items-start justify-center flex-1 max-w-7xl mx-auto px-5 md:px-10 pt-28 pb-20">
+        <div className="relative z-10 flex flex-col items-start justify-center flex-1 max-w-7xl mx-auto px-5 md:px-10 pt-20 md:pt-28 pb-12 md:pb-20">
           <p className="hero-animate hero-animate-delay-1 text-white/60 text-[10px] tracking-[0.35em] uppercase mb-6">
             Мебель с характером
           </p>
@@ -475,7 +475,7 @@ export default function Index() {
       <div className="bg-[#111] text-white py-3 overflow-hidden select-none">
         <div className="ticker-track">
           {[...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-            <span key={i} className="text-[11px] tracking-[0.3em] uppercase mx-10 text-white font-medium">
+            <span key={i} className="text-[11px] tracking-[0.3em] uppercase mx-5 md:mx-10 text-white font-medium">
               {item} <span className="mx-5 opacity-50">◆</span>
             </span>
           ))}
@@ -483,11 +483,11 @@ export default function Index() {
       </div>
 
       {/* ── RECOMMENDATIONS ── */}
-      <section id="recommendations" className="py-24 max-w-7xl mx-auto px-5 md:px-10">
-        <div className="flex items-end justify-between mb-14">
+      <section id="recommendations" className="py-12 md:py-24 max-w-7xl mx-auto px-5 md:px-10">
+        <div className="flex items-end justify-between mb-8 md:mb-14">
           <div>
             <p className="text-[10px] tracking-[0.3em] uppercase text-[#999] mb-3">Редакция выбирает</p>
-            <h2 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-light">Рекомендации</h2>
+            <h2 className="font-display text-[clamp(2rem,5vw,4rem)] font-light">Рекомендации</h2>
           </div>
           <button
             onClick={() => scrollTo("#catalog")}
@@ -520,11 +520,11 @@ export default function Index() {
       </section>
 
       {/* ── CATALOG ── */}
-      <section id="catalog" className="bg-[#f2f2f0] py-24">
+      <section id="catalog" className="bg-[#f2f2f0] py-12 md:py-24">
         <div className="max-w-7xl mx-auto px-5 md:px-10">
-          <div className="mb-14">
+          <div className="mb-8 md:mb-14">
             <p className="text-[10px] tracking-[0.3em] uppercase text-[#999] mb-3">Наши изделия</p>
-            <h2 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-light">Каталог</h2>
+            <h2 className="font-display text-[clamp(2rem,5vw,4rem)] font-light">Каталог</h2>
           </div>
 
           {/* Filters */}
@@ -630,11 +630,11 @@ export default function Index() {
       </section>
 
       {/* ── CALCULATOR ── */}
-      <section id="calculator" className="py-24 bg-[#f9f9f7]">
+      <section id="calculator" className="py-12 md:py-24 bg-[#f9f9f7]">
         <div className="max-w-7xl mx-auto px-5 md:px-10">
-          <div className="mb-12">
+          <div className="mb-8 md:mb-12">
             <p className="text-[10px] tracking-[0.3em] uppercase text-[#999] mb-3">Онлайн-расчёт</p>
-            <h2 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-light">Калькулятор цены</h2>
+            <h2 className="font-display text-[clamp(2rem,5vw,4rem)] font-light">Калькулятор цены</h2>
           </div>
 
           {!calcDone ? (
@@ -656,7 +656,7 @@ export default function Index() {
                         }`}>
                           {i < calcStep ? <Icon name="Check" size={12} /> : i + 1}
                         </div>
-                        <span className={`text-[10px] tracking-wider uppercase whitespace-nowrap ${i === calcStep ? "text-[#111] font-semibold" : i < calcStep ? "text-[#555]" : "text-[#bbb]"}`}>
+                        <span className={`hidden sm:inline text-[10px] tracking-wider uppercase whitespace-nowrap ${i === calcStep ? "text-[#111] font-semibold" : i < calcStep ? "text-[#555]" : "text-[#bbb]"}`}>
                           {label}
                         </span>
                       </button>
@@ -957,7 +957,7 @@ export default function Index() {
       </section>
 
       {/* ── ABOUT ── */}
-      <section id="about" className="bg-white text-[#111] py-24 border-t border-[#eee]">
+      <section id="about" className="bg-white text-[#111] py-12 md:py-24 border-t border-[#eee]">
         <div className="max-w-7xl mx-auto px-5 md:px-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -971,10 +971,10 @@ export default function Index() {
               <p className="text-[#444] leading-relaxed mb-10 text-[15px]">
                 Каждый предмет изготавливается по индивидуальным параметрам на нашем производстве. Мы работаем с МДФ, ЛДСП и натуральным массивом дерева, подбирая материал под задачу и бюджет.
               </p>
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-3 gap-3 md:gap-6">
                 {[["7+", "Лет опыта"], ["1200+", "Объектов"], ["100%", "Гарантия"]].map(([num, label]) => (
                   <div key={label}>
-                    <p className="font-display text-4xl font-light mb-1 text-[#111]">{num}</p>
+                    <p className="font-display text-2xl md:text-4xl font-light mb-1 text-[#111]">{num}</p>
                     <p className="text-[#999] text-[10px] tracking-wider uppercase">{label}</p>
                   </div>
                 ))}
@@ -1008,9 +1008,9 @@ export default function Index() {
       </section>
 
       {/* ── CONTACTS ── */}
-      <section id="contacts" className="py-24 bg-[#111]">
+      <section id="contacts" className="py-12 md:py-24 bg-[#111]">
         <div className="max-w-7xl mx-auto px-5 md:px-10">
-        <div className="mb-14">
+        <div className="mb-8 md:mb-14">
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3">Напишите нам</p>
           <h2 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-light text-white">Контакты</h2>
         </div>

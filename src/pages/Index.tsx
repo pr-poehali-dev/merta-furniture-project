@@ -1221,9 +1221,19 @@ export default function Index() {
                   <span className="bg-[#111] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">{cartCount}</span>
                 )}
               </div>
-              <button onClick={() => setCartOpen(false)} className="p-1 -mr-1">
-                <Icon name="X" size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                {cart.length > 0 && (
+                  <button
+                    onClick={() => setCart([])}
+                    className="text-[10px] tracking-wider uppercase text-[#bbb] hover:text-[#e33] transition-colors p-1"
+                  >
+                    Очистить
+                  </button>
+                )}
+                <button onClick={() => setCartOpen(false)} className="p-1 -mr-1">
+                  <Icon name="X" size={20} />
+                </button>
+              </div>
             </div>
 
             {/* Items */}

@@ -213,21 +213,25 @@ input[type="range"]::-webkit-slider-thumb {
 @keyframes slideRight {
   from {
     transform: translateX(100%);
+    opacity: 0;
   }
   to {
     transform: translateX(0);
+    opacity: 1;
   }
 }
-@keyframes slideUp {
+@keyframes fadeUp {
   from {
-    transform: translateY(100%);
+    transform: translateY(16px);
+    opacity: 0;
   }
   to {
     transform: translateY(0);
+    opacity: 1;
   }
 }
 .cart-open-mobile {
-  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 @media (min-width: 640px) {
   .cart-open-mobile {

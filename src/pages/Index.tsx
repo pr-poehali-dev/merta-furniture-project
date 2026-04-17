@@ -84,6 +84,9 @@ export default function Index() {
   const lastScrollY = useRef(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Product modal
+  const [selectedProduct, setSelectedProduct] = useState<typeof PRODUCTS[0] | null>(null);
+
   // Cart
   const [cart, setCart] = useState<{id: number; name: string; price: number; img: string; category: string; qty: number}[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -703,7 +706,7 @@ export default function Index() {
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
               {filtered.map((p) => (
-                <div key={p.id} className="product-card bg-white group cursor-pointer">
+                <div key={p.id} className="product-card bg-white group cursor-pointer" onClick={() => setSelectedProduct(p)}>
                   <div className="overflow-hidden aspect-[4/3] bg-[#eee] relative">
                     <img src={p.img} alt={p.name} className="card-img w-full h-full object-cover" />
                     {p.tag && (
@@ -717,7 +720,7 @@ export default function Index() {
                     <h3 className="font-display text-base md:text-2xl font-light mb-1 leading-tight">{p.name}</h3>
                     <p className="font-body font-semibold text-sm mb-3">от {formatPrice(p.price)}</p>
                     <button
-                      onClick={() => addToCart(p)}
+                      onClick={(e) => { e.stopPropagation(); addToCart(p); }}
                       className="w-full flex items-center justify-center gap-1.5 text-[10px] tracking-wider uppercase border border-[#111] py-2 hover:bg-[#111] hover:text-white transition-colors duration-300"
                     >
                       <Icon name="Plus" size={11} /> В корзину
@@ -1179,6 +1182,67 @@ export default function Index() {
           </div>
         </div>
       </footer>
+
+      {/* ── PRODUCT MODAL ── */}
+      {selectedProduct && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setSelectedProduct(null)} />
+          <div className="relative bg-white w-full sm:max-w-lg sm:rounded-none max-h-[92svh] flex flex-col rounded-t-2xl">
+            {/* Image */}
+            <div className="relative aspect-[4/3] sm:aspect-[16/9] bg-[#eee] flex-shrink-0">
+              <img src={selectedProduct.img} alt={selectedProduct.name} className="w-full h-full object-cover" />
+              {selectedProduct.tag && (
+                <span className="absolute top-4 left-4 bg-[#111] text-white text-[9px] tracking-widest uppercase px-2.5 py-1">
+                  {selectedProduct.tag}
+                </span>
+              )}
+              <button
+                onClick={() => setSelectedProduct(null)}
+                className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full"
+              >
+                <Icon name="X" size={18} />
+              </button>
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 overflow-y-auto px-5 py-5">
+              <p className="text-[10px] tracking-widest uppercase text-[#999] mb-1">{selectedProduct.category}</p>
+              <h2 className="font-display text-2xl sm:text-3xl font-light mb-3">{selectedProduct.name}</h2>
+              <div className="flex gap-6 mb-5">
+                <div>
+                  <p className="text-[10px] tracking-widest uppercase text-[#bbb] mb-1">Материал</p>
+                  <p className="text-sm font-medium">{selectedProduct.material}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] tracking-widest uppercase text-[#bbb] mb-1">Стоимость</p>
+                  <p className="text-sm font-semibold">от {formatPrice(selectedProduct.price)}</p>
+                </div>
+              </div>
+              <p className="text-sm text-[#666] leading-relaxed">
+                Изготавливается под заказ с учётом ваших размеров и пожеланий. Срок производства — от 25 рабочих дней. Доставка и установка включены.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="px-5 py-4 border-t border-[#eee] flex gap-3 flex-shrink-0" style={{paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'}}>
+              <button
+                onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}
+                className="flex-1 bg-[#111] text-white py-3 text-[11px] tracking-widest uppercase hover:bg-[#333] transition-colors"
+              >
+                В корзину
+              </button>
+              <a
+                href="https://wa.me/79181300668"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 border border-[#111] py-3 text-[11px] tracking-widest uppercase text-center hover:bg-[#111] hover:text-white transition-colors"
+              >
+                Заказать
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── CART ── */}
       {cartOpen && (

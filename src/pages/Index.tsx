@@ -1202,22 +1202,22 @@ export default function Index() {
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50" onClick={() => setCartOpen(false)} />
 
-          {/* Mobile: bottom sheet | Desktop: right drawer */}
-          <div className="cart-sheet absolute bg-white flex flex-col bottom-0 left-0 right-0 rounded-t-2xl cart-open-mobile sm:top-0 sm:bottom-0 sm:left-auto sm:right-0 sm:w-80 sm:rounded-none shadow-2xl">
+          {/* Desktop: right drawer | Mobile: bottom sheet */}
+          <div className="absolute bg-white flex flex-col bottom-0 left-0 right-0 max-h-[70dvh] rounded-t-xl cart-open-mobile sm:bottom-0 sm:top-0 sm:left-auto sm:right-0 sm:w-80 sm:max-h-none sm:rounded-none cart-open">
             {/* Handle — only mobile */}
-            <div className="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+            <div className="sm:hidden flex justify-center pt-2.5 pb-0.5 flex-shrink-0">
               <div className="w-8 h-1 bg-[#ddd] rounded-full" />
             </div>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#eee] flex-shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4 border-b border-[#eee] flex-shrink-0">
               <div className="flex items-center gap-2">
                 <h3 className="font-display text-xl font-light">Корзина</h3>
                 {cartCount > 0 && (
                   <span className="bg-[#111] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">{cartCount}</span>
                 )}
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {cart.length > 0 && (
                   <button onClick={() => setCart([])} className="text-[10px] tracking-wider uppercase text-[#bbb] hover:text-[#e33] transition-colors">
                     Очистить
@@ -1229,10 +1229,10 @@ export default function Index() {
               </div>
             </div>
 
-            {/* Items — скролл только внутри */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+            {/* Items */}
+            <div className="flex-1 overflow-y-auto px-4 py-3 sm:px-5">
               {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-[#ccc] gap-3 py-10">
+                <div className="flex flex-col items-center justify-center h-full text-[#ccc] gap-3 py-8">
                   <Icon name="ShoppingBag" size={32} />
                   <p className="text-[11px] tracking-widest uppercase">Корзина пуста</p>
                 </div>
@@ -1246,7 +1246,7 @@ export default function Index() {
                         <p className="text-[10px] text-[#999] mt-0.5">{item.product.category}</p>
                         <p className="text-sm font-semibold mt-0.5">{formatPrice(item.product.price * item.qty)}</p>
                       </div>
-                      <button onClick={() => removeFromCart(item.product.id)} className="text-[#ccc] hover:text-[#111] transition-colors p-2 flex-shrink-0">
+                      <button onClick={() => removeFromCart(item.product.id)} className="text-[#ccc] hover:text-[#111] transition-colors p-1.5 -mr-1 flex-shrink-0">
                         <Icon name="Trash2" size={14} />
                       </button>
                     </div>
@@ -1257,7 +1257,7 @@ export default function Index() {
 
             {/* Footer */}
             {cart.length > 0 && (
-              <div className="px-4 py-3 border-t border-[#eee] flex-shrink-0" style={{paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'}}>
+              <div className="px-4 py-3 sm:px-5 sm:py-4 border-t border-[#eee] flex-shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-[11px] tracking-widest uppercase text-[#999]">Итого</span>
                   <span className="font-display text-lg">{formatPrice(cartTotal)}</span>

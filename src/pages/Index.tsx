@@ -89,6 +89,8 @@ export default function Index() {
   const [filterCategory, setFilterCategory] = useState("Все");
   const [filterMaterial, setFilterMaterial] = useState("Все");
   const [filterMaxPrice, setFilterMaxPrice] = useState(300000);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFiltersCount = (filterCategory !== "Все" ? 1 : 0) + (filterMaterial !== "Все" ? 1 : 0) + (filterMaxPrice < 300000 ? 1 : 0);
 
   // Cart
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -528,66 +530,142 @@ export default function Index() {
           </div>
 
           {/* Filters */}
-          <div className="bg-white p-6 md:p-8 mb-10 border border-[#e8e8e8]">
-            <p className="text-[10px] tracking-[0.3em] uppercase text-[#bbb] mb-6">Фильтр товаров</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
-              <div>
-                <p className="text-[11px] tracking-widest uppercase mb-3 font-semibold">Тип мебели</p>
-                <div className="flex flex-wrap gap-2">
-                  {CATEGORIES.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => setFilterCategory(c)}
-                      className={`px-3 py-2 text-[11px] tracking-wider border transition-colors ${
-                        filterCategory === c
-                          ? "bg-[#111] text-white border-[#111]"
-                          : "border-[#ddd] text-[#555] hover:border-[#111]"
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))}
+          <div className="bg-white mb-6 md:mb-10 border border-[#e8e8e8]">
+            {/* Mobile toggle */}
+            <button
+              className="md:hidden w-full flex items-center justify-between px-5 py-4"
+              onClick={() => setFiltersOpen((v) => !v)}
+            >
+              <div className="flex items-center gap-3">
+                <Icon name="SlidersHorizontal" size={16} />
+                <span className="text-[11px] tracking-widest uppercase font-semibold">Фильтры</span>
+                {activeFiltersCount > 0 && (
+                  <span className="bg-[#111] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-semibold">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </div>
+              <Icon name={filtersOpen ? "ChevronUp" : "ChevronDown"} size={16} className="text-[#999]" />
+            </button>
+
+            {/* Active filter chips on mobile when collapsed */}
+            {!filtersOpen && activeFiltersCount > 0 && (
+              <div className="md:hidden flex flex-wrap gap-2 px-5 pb-4">
+                {filterCategory !== "Все" && (
+                  <button
+                    onClick={() => setFilterCategory("Все")}
+                    className="flex items-center gap-1.5 bg-[#111] text-white text-[10px] tracking-wider px-3 py-1.5"
+                  >
+                    {filterCategory} <Icon name="X" size={10} />
+                  </button>
+                )}
+                {filterMaterial !== "Все" && (
+                  <button
+                    onClick={() => setFilterMaterial("Все")}
+                    className="flex items-center gap-1.5 bg-[#111] text-white text-[10px] tracking-wider px-3 py-1.5"
+                  >
+                    {filterMaterial} <Icon name="X" size={10} />
+                  </button>
+                )}
+                {filterMaxPrice < 300000 && (
+                  <button
+                    onClick={() => setFilterMaxPrice(300000)}
+                    className="flex items-center gap-1.5 bg-[#111] text-white text-[10px] tracking-wider px-3 py-1.5"
+                  >
+                    до {formatPrice(filterMaxPrice)} <Icon name="X" size={10} />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Filter content */}
+            <div className={`${filtersOpen ? "block" : "hidden"} md:block p-5 md:p-8 border-t border-[#e8e8e8] md:border-t-0`}>
+              <p className="hidden md:block text-[10px] tracking-[0.3em] uppercase text-[#bbb] mb-6">Фильтр товаров</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8">
+                <div>
+                  <p className="text-[11px] tracking-widest uppercase mb-3 font-semibold">Тип мебели</p>
+                  <div className="flex flex-wrap gap-2">
+                    {CATEGORIES.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setFilterCategory(c)}
+                        className={`px-3 py-2 text-[11px] tracking-wider border transition-colors ${
+                          filterCategory === c
+                            ? "bg-[#111] text-white border-[#111]"
+                            : "border-[#ddd] text-[#555] hover:border-[#111]"
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[11px] tracking-widest uppercase mb-3 font-semibold">Материал</p>
+                  <div className="flex flex-wrap gap-2">
+                    {MATERIALS.map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => setFilterMaterial(m)}
+                        className={`px-3 py-2 text-[11px] tracking-wider border transition-colors ${
+                          filterMaterial === m
+                            ? "bg-[#111] text-white border-[#111]"
+                            : "border-[#ddd] text-[#555] hover:border-[#111]"
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[11px] tracking-widest uppercase mb-3 font-semibold">
+                    Цена до:{" "}
+                    <span className="font-normal text-[#555]">{formatPrice(filterMaxPrice)}</span>
+                  </p>
+                  <input
+                    type="range"
+                    min={30000}
+                    max={300000}
+                    step={5000}
+                    value={filterMaxPrice}
+                    onChange={(e) => setFilterMaxPrice(Number(e.target.value))}
+                    className="w-full mt-3"
+                  />
+                  <div className="flex justify-between text-[10px] text-[#bbb] mt-1">
+                    <span>30 000 ₽</span>
+                    <span>300 000 ₽</span>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <p className="text-[11px] tracking-widest uppercase mb-3 font-semibold">Материал</p>
-                <div className="flex flex-wrap gap-2">
-                  {MATERIALS.map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => setFilterMaterial(m)}
-                      className={`px-3 py-2 text-[11px] tracking-wider border transition-colors ${
-                        filterMaterial === m
-                          ? "bg-[#111] text-white border-[#111]"
-                          : "border-[#ddd] text-[#555] hover:border-[#111]"
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
+              {/* Reset + Apply on mobile */}
+              {activeFiltersCount > 0 && (
+                <div className="md:hidden flex gap-3 mt-5 pt-5 border-t border-[#eee]">
+                  <button
+                    onClick={() => { setFilterCategory("Все"); setFilterMaterial("Все"); setFilterMaxPrice(300000); }}
+                    className="flex-1 border border-[#ddd] py-2.5 text-[11px] tracking-widest uppercase hover:border-[#111] transition-colors"
+                  >
+                    Сбросить
+                  </button>
+                  <button
+                    onClick={() => setFiltersOpen(false)}
+                    className="flex-1 bg-[#111] text-white py-2.5 text-[11px] tracking-widest uppercase"
+                  >
+                    Показать
+                  </button>
                 </div>
-              </div>
-
-              <div>
-                <p className="text-[11px] tracking-widest uppercase mb-3 font-semibold">
-                  Цена до:{" "}
-                  <span className="font-normal text-[#555]">{formatPrice(filterMaxPrice)}</span>
-                </p>
-                <input
-                  type="range"
-                  min={30000}
-                  max={300000}
-                  step={5000}
-                  value={filterMaxPrice}
-                  onChange={(e) => setFilterMaxPrice(Number(e.target.value))}
-                  className="w-full mt-3"
-                />
-                <div className="flex justify-between text-[10px] text-[#bbb] mt-1">
-                  <span>30 000 ₽</span>
-                  <span>300 000 ₽</span>
-                </div>
-              </div>
+              )}
+              {activeFiltersCount === 0 && (
+                <button
+                  className="md:hidden w-full mt-5 bg-[#111] text-white py-2.5 text-[11px] tracking-widest uppercase"
+                  onClick={() => setFiltersOpen(false)}
+                >
+                  Показать
+                </button>
+              )}
             </div>
           </div>
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -80,6 +81,7 @@ interface CartItem {
 }
 
 export default function Index() {
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -422,7 +424,7 @@ export default function Index() {
               Каталог
             </button>
             <button
-              onClick={() => scrollTo("#calculator")}
+              onClick={() => navigate("/calculator")}
               className="border border-white text-white px-8 py-3.5 text-[11px] tracking-widest uppercase hover:bg-white hover:text-[#111] transition-colors duration-300"
             >
               Рассчитать стоимость

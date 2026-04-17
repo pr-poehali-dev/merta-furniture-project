@@ -136,6 +136,15 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
+    if (cartOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [cartOpen]);
+
+  useEffect(() => {
     const ids = ["home", "catalog", "recommendations", "calculator", "about", "contacts"];
     const observers = ids.map((id) => {
       const el = document.getElementById(id);
@@ -1192,31 +1201,49 @@ export default function Index() {
       {cartOpen && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50" onClick={() => setCartOpen(false)} />
-          <div className="absolute right-0 top-0 bottom-0 w-full sm:max-w-md bg-white cart-open flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-[#eee]">
-              <h3 className="font-display text-2xl font-light">Корзина</h3>
-              <button onClick={() => setCartOpen(false)}>
+
+          {/* Desktop: right drawer | Mobile: bottom sheet */}
+          <div className="
+            absolute bg-white flex flex-col
+            bottom-0 left-0 right-0 max-h-[90dvh] rounded-t-2xl cart-open-mobile
+            sm:bottom-0 sm:top-0 sm:left-auto sm:right-0 sm:w-full sm:max-w-md sm:max-h-none sm:rounded-none cart-open
+          ">
+            {/* Handle — only mobile */}
+            <div className="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-10 h-1 bg-[#ddd] rounded-full" />
+            </div>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 sm:p-6 border-b border-[#eee] flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <h3 className="font-display text-2xl font-light">Корзина</h3>
+                {cartCount > 0 && (
+                  <span className="bg-[#111] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">{cartCount}</span>
+                )}
+              </div>
+              <button onClick={() => setCartOpen(false)} className="p-1 -mr-1">
                 <Icon name="X" size={20} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            {/* Items */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 sm:p-6">
               {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-[#ccc] gap-4">
+                <div className="flex flex-col items-center justify-center h-full text-[#ccc] gap-4 py-12">
                   <Icon name="ShoppingBag" size={40} />
                   <p className="text-[11px] tracking-widest uppercase">Корзина пуста</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {cart.map((item) => (
-                    <div key={item.product.id} className="flex gap-4 items-start border-b border-[#f0f0f0] pb-4">
-                      <img src={item.product.img} alt={item.product.name} className="w-16 h-16 object-cover bg-[#eee] flex-shrink-0" />
+                    <div key={item.product.id} className="flex gap-3 items-center border-b border-[#f0f0f0] pb-4">
+                      <img src={item.product.img} alt={item.product.name} className="w-14 h-14 sm:w-16 sm:h-16 object-cover bg-[#eee] flex-shrink-0 rounded" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-display text-lg font-light truncate">{item.product.name}</p>
-                        <p className="text-[10px] text-[#999] tracking-wider">{item.product.category} · {item.product.material}</p>
+                        <p className="font-display text-base sm:text-lg font-light leading-tight truncate">{item.product.name}</p>
+                        <p className="text-[10px] text-[#999] tracking-wider mt-0.5">{item.product.category}</p>
                         <p className="text-sm font-semibold mt-1">{formatPrice(item.product.price * item.qty)}</p>
                       </div>
-                      <button onClick={() => removeFromCart(item.product.id)} className="text-[#ccc] hover:text-[#111] transition-colors flex-shrink-0">
+                      <button onClick={() => removeFromCart(item.product.id)} className="text-[#ccc] hover:text-[#111] transition-colors flex-shrink-0 p-2 -mr-1">
                         <Icon name="Trash2" size={16} />
                       </button>
                     </div>
@@ -1225,13 +1252,14 @@ export default function Index() {
               )}
             </div>
 
+            {/* Footer */}
             {cart.length > 0 && (
-              <div className="p-6 border-t border-[#eee]">
+              <div className="px-5 py-4 sm:p-6 border-t border-[#eee] flex-shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))]">
                 <div className="flex justify-between mb-4">
                   <span className="text-[11px] tracking-widest uppercase">Итого</span>
                   <span className="font-display text-xl">{formatPrice(cartTotal)}</span>
                 </div>
-                <button className="w-full bg-[#111] text-white py-3.5 text-[11px] tracking-widest uppercase hover:bg-[#333] transition-colors">
+                <button className="w-full bg-[#111] text-white py-4 text-[11px] tracking-widest uppercase hover:bg-[#333] transition-colors">
                   Оформить заказ
                 </button>
               </div>

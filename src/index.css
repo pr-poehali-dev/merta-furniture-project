@@ -202,8 +202,24 @@ input[type="range"]::-webkit-slider-thumb {
     transform: translateX(0);
   }
 }
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
 .cart-open {
   animation: slideRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@media (max-width: 639px) {
+  .cart-open-mobile {
+    animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .cart-open {
+    animation: none;
+  }
 }
 
 /* Page transition */

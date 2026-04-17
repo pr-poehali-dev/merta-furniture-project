@@ -1184,7 +1184,7 @@ export default function Index() {
       {cartOpen && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50" onClick={() => setCartOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl flex flex-col max-h-[80dvh] sm:inset-y-0 sm:bottom-auto sm:left-auto sm:right-0 sm:w-96 sm:max-h-full sm:rounded-none">
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl flex flex-col max-h-[80svh] sm:top-0 sm:bottom-0 sm:left-auto sm:right-0 sm:w-96 sm:max-h-screen sm:rounded-none">
             {/* Handle — mobile only */}
             <div className="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
               <div className="w-8 h-1 bg-[#ddd] rounded-full" />

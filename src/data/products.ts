@@ -1,7 +1,3 @@
-const IMG1 = "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/e74cff74-26e5-49f8-99d3-ac9c89aa17f1.jpg";
-const IMG2 = "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/5f94a626-e3c2-4f82-af58-e90a0b5e423b.jpg";
-const IMG3 = "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/4f4e3f83-87fe-434b-a91c-117e40dba3fd.jpg";
-
 export const PRODUCTS = [
   {
     id: 1,
@@ -9,8 +5,12 @@ export const PRODUCTS = [
     category: "Кухни",
     material: "МДФ",
     price: 185000,
-    img: IMG1,
-    images: [IMG1, IMG2, IMG3],
+    img: "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/dedf15fe-1618-4d7c-8f53-ec3dc4f7c337.jpg",
+    images: [
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/dedf15fe-1618-4d7c-8f53-ec3dc4f7c337.jpg",
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/f3d1f2ce-5711-4d0f-b0b5-528eb375fa32.jpg",
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/a60fa4fc-39a9-491e-ac1e-9e8fa358c621.jpg",
+    ],
     tag: "Хит" as string | null,
     description: "Современная кухня в скандинавском стиле с фасадами из МДФ. Изготавливается под заказ с учётом ваших размеров. Доступна в белом, сером и бежевом цветах.",
   },
@@ -20,8 +20,12 @@ export const PRODUCTS = [
     category: "Шкафы",
     material: "ЛДСП",
     price: 64000,
-    img: IMG2,
-    images: [IMG2, IMG3, IMG1],
+    img: "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/2f610a0f-7dfe-4521-89b5-3b4603a4256d.jpg",
+    images: [
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/2f610a0f-7dfe-4521-89b5-3b4603a4256d.jpg",
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/6865d782-3d33-405d-9717-60602817a0ff.jpg",
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/459fb61a-50eb-4542-8700-15479134c029.jpg",
+    ],
     tag: null,
     description: "Вместительный шкаф-купе с зеркальными дверями. Система плавного закрытия, алюминиевый профиль. Подходит для спальни, прихожей или гостиной.",
   },
@@ -31,8 +35,12 @@ export const PRODUCTS = [
     category: "Диваны",
     material: "Массив",
     price: 97000,
-    img: IMG3,
-    images: [IMG3, IMG1, IMG2],
+    img: "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/a2edc4dc-930b-4fbc-8e3f-f7f94ab84324.jpg",
+    images: [
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/a2edc4dc-930b-4fbc-8e3f-f7f94ab84324.jpg",
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/8265a262-f4a4-4f46-b1dd-6972319590d8.jpg",
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/817143a7-989b-4a04-8ab4-200f28b93bda.jpg",
+    ],
     tag: "Новинка" as string | null,
     description: "Лаконичный диван на деревянных ножках из массива. Съёмные чехлы, механизм трансформации. Доступен в 12 цветах обивки.",
   },
@@ -42,8 +50,12 @@ export const PRODUCTS = [
     category: "Спальни",
     material: "МДФ",
     price: 142000,
-    img: IMG2,
-    images: [IMG2, IMG1, IMG3],
+    img: "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/7d7828c5-5c89-4cb6-a65f-3a91e20fb3d6.jpg",
+    images: [
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/7d7828c5-5c89-4cb6-a65f-3a91e20fb3d6.jpg",
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/ccd3c8c4-4278-4f27-8494-6a41ff6166bc.jpg",
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/83262e7c-4fb8-462c-9054-83d06c685478.jpg",
+    ],
     tag: null,
     description: "Комплект спальной мебели: кровать, тумбы, комод и шкаф. Фасады МДФ с матовым покрытием, мягкое изголовье. Размер кровати 160×200 или 180×200.",
   },
@@ -53,8 +65,12 @@ export const PRODUCTS = [
     category: "Кухни",
     material: "Массив",
     price: 230000,
-    img: IMG1,
-    images: [IMG1, IMG3, IMG2],
+    img: "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/812bc2fd-cc3f-46c9-b33f-26e347ffb482.jpg",
+    images: [
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/812bc2fd-cc3f-46c9-b33f-26e347ffb482.jpg",
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/9b641e78-0da0-4363-8047-7c54a0dfe612.jpg",
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/8a7e57aa-6150-41fe-a1eb-6a477b4ad22e.jpg",
+    ],
     tag: "Премиум" as string | null,
     description: "Кухня в стиле лофт из натурального массива дуба. Открытые полки, металлические ручки, столешница из керамогранита. Ручная работа, срок — от 45 дней.",
   },
@@ -64,8 +80,12 @@ export const PRODUCTS = [
     category: "Шкафы",
     material: "МДФ",
     price: 78000,
-    img: IMG2,
-    images: [IMG2, IMG3, IMG1],
+    img: "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/0d2d80da-913a-424b-917b-99dbdfdf5ebe.jpg",
+    images: [
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/0d2d80da-913a-424b-917b-99dbdfdf5ebe.jpg",
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/5056988a-ad24-4adf-abbc-3d8b87d529bb.jpg",
+      "https://cdn.poehali.dev/projects/1bc0b21f-3ead-42a5-8908-be46fa1704ea/files/dd09de54-0bb7-4385-a2f0-31d3c14c63a5.jpg",
+    ],
     tag: null,
     description: "Распашной шкаф с продуманной системой хранения. Штанга, полки, ящики — всё на своём месте. Фасады МДФ, доступен в любом цвете по каталогу RAL.",
   },

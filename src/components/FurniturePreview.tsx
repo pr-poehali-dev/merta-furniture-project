@@ -53,113 +53,158 @@ function iso(x: number, y: number, z: number, bx: number, bz: number): [number,n
 // front (facing viewer) → face color, top → top color, right side → side color
 type M = ReturnType<typeof getM>;
 
-// Рисует изометрический Box: left-front-bottom в точке (wx,wy,wz), размеры (dw,dd,dh)
+// Реалистичный изометрический Box с правильным освещением:
+// — верх ярче (свет сверху), лицо среднее, правый бок темнее
+// — мягкие рёбра, внутренний контур, тонкая светлая линия на верхнем ребре
 function IsoBox({ bx, bz, wx, wy, wz, dw, dd, dh, m, faceC, topC, sideC, opacity=1 }: {
   bx:number; bz:number; wx:number; wy:number; wz:number;
   dw:number; dd:number; dh:number; m:M;
   faceC?:string; topC?:string; sideC?:string; opacity?:number;
 }) {
-  // 8 вершин
   const p = (x:number,y:number,z:number) => iso(wx+x,wy+y,wz+z,bx,bz);
-
   const A = p(0,0,0); const B = p(dw,0,0); const C = p(dw,dd,0); const D = p(0,dd,0);
   const E = p(0,0,dh); const F = p(dw,0,dh); const G = p(dw,dd,dh); const H = p(0,dd,dh);
-
   const pt = ([x,y]:[number,number]) => `${x.toFixed(1)},${y.toFixed(1)}`;
 
   const fc = faceC ?? m.f0;
   const tc = topC  ?? m.t0;
   const sc = sideC ?? m.s0;
 
-  // Лицевая грань (y=0 плоскость, z растёт вверх)
-  const faceFill = `linear-gradient(180deg, ${lighten(fc,8)} 0%, ${fc} 40%, ${darken(fc,15)} 100%)`;
-  // Упрощаем: используем solid цвета с SVG-градиентом через polygon
+  // Освещение: свет идёт слева сверху
+  const topLit    = lighten(tc, 6);    // верх — самый светлый
+  const faceLit   = fc;                 // лицо — средний
+  const faceShade = darken(fc, 8);     // низ лица в тени
+  const rightDark = darken(sc, 10);    // правый бок — темнее
+  const edgeC     = darken(m.edge, 8);
 
   return (
     <g opacity={opacity}>
-      {/* Левая боковая (x=0) */}
-      <polygon points={`${pt(A)} ${pt(D)} ${pt(H)} ${pt(E)}`}
-        fill={darken(sc,12)} stroke={darken(m.edge,10)} strokeWidth="0.4" />
-      {/* Лицевая (y=0) */}
-      <polygon points={`${pt(A)} ${pt(B)} ${pt(F)} ${pt(E)}`}
-        fill={fc} stroke={m.edge} strokeWidth="0.4" />
-      {/* Правая боковая (x=dw) */}
-      <polygon points={`${pt(B)} ${pt(C)} ${pt(G)} ${pt(F)}`}
-        fill={sc} stroke={m.edge} strokeWidth="0.4" />
-      {/* Верхняя (z=dh) */}
-      <polygon points={`${pt(E)} ${pt(F)} ${pt(G)} ${pt(H)}`}
-        fill={tc} stroke={darken(m.edge,5)} strokeWidth="0.4" />
-      {/* Волокна дерева */}
-      {m.grain && [0.18,0.36,0.54,0.72,0.88].map((t,i) => {
+      {/* Правая боковая грань (x=dw) — тёмная */}
+      <polygon points={`${pt(B)} ${pt(C)} ${pt(G)} ${pt(F)}`} fill={rightDark} stroke={edgeC} strokeWidth="0.4" />
+      {/* Лицевая грань (y=0) с вертикальным градиентом через два полигона */}
+      <polygon points={`${pt(A)} ${pt(B)} ${pt(F)} ${pt(E)}`} fill={faceLit} stroke={edgeC} strokeWidth="0.4" />
+      <polygon points={`${pt(A)} ${pt(B)} ${p(dw,0,dh*0.25)[0]},${p(dw,0,dh*0.25)[1]} ${p(0,0,dh*0.25)[0]},${p(0,0,dh*0.25)[1]}`} fill={faceShade} opacity="0.5" />
+      {/* Верхняя (z=dh) — светлая */}
+      <polygon points={`${pt(E)} ${pt(F)} ${pt(G)} ${pt(H)}`} fill={topLit} stroke={edgeC} strokeWidth="0.4" />
+      {/* Тонкий блик на верхнем переднем ребре */}
+      <line x1={E[0]} y1={E[1]} x2={F[0]} y2={F[1]} stroke={lighten(tc,18)} strokeWidth="0.5" opacity="0.8" />
+      {/* Волокна дерева — только на лицевой */}
+      {m.grain && [0.15,0.3,0.45,0.6,0.78,0.9].map((t,i) => {
         const x1 = p(dw*t,0,0); const x2 = p(dw*t,0,dh);
-        return <line key={i} x1={x1[0]} y1={x1[1]} x2={x2[0]} y2={x2[1]} stroke="rgba(0,0,0,0.06)" strokeWidth="0.6"/>;
+        return <line key={i} x1={x1[0]} y1={x1[1]} x2={x2[0]} y2={x2[1]} stroke="rgba(0,0,0,0.07)" strokeWidth="0.5"/>;
       })}
-      {/* Глянцевый блик */}
+      {/* Глянцевый блик с мягким переходом */}
       {m.gloss && (() => {
-        const a = p(0,0,dh); const b = p(dw*0.3,0,dh); const c = p(dw*0.25,0,dh*0.3); const d2 = p(0,0,dh*0.3);
-        return <polygon points={`${pt(a)} ${pt(b)} ${pt(c)} ${pt(d2)}`} fill="rgba(255,255,255,0.2)"/>;
+        const a = p(dw*0.05,0,dh*0.95); const b = p(dw*0.35,0,dh*0.95);
+        const c = p(dw*0.22,0,dh*0.25); const d2 = p(dw*0.05,0,dh*0.25);
+        return <polygon points={`${pt(a)} ${pt(b)} ${pt(c)} ${pt(d2)}`} fill="rgba(255,255,255,0.22)"/>;
       })()}
     </g>
   );
 }
 
-// Тонкая горизонтальная полка
-function IsoShelf({ bx, bz, wx, wy, wz, dw, dd, m, thick=1.5 }: {
+// Реалистичная тонкая полка с передним кантом и нижней тенью
+function IsoShelf({ bx, bz, wx, wy, wz, dw, dd, m, thick=0.02 }: {
   bx:number; bz:number; wx:number; wy:number; wz:number; dw:number; dd:number; m:M; thick?:number;
 }) {
-  return <IsoBox bx={bx} bz={bz} wx={wx} wy={wy} wz={wz} dw={dw} dd={dd} dh={thick} m={m}
-    faceC={darken(m.f0,5)} topC={lighten(m.t0,8)} sideC={m.s0} />;
-}
-
-// Штанга
-function IsoRail({ bx, bz, wx, wy, wz, dw, m }: {
-  bx:number; bz:number; wx:number; wy:number; wz:number; dw:number; m:M;
-}) {
   const p = (x:number,y:number,z:number) => iso(wx+x,wy+y,wz+z,bx,bz);
-  const A = p(0,0,0); const B = p(dw,0,0);
   const pt = ([x,y]:[number,number]) => `${x.toFixed(1)},${y.toFixed(1)}`;
+  // Тень под полкой
+  const s1 = p(0.02,0.02,-0.005); const s2 = p(dw-0.02,0.02,-0.005);
   return (
     <g>
-      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke="#c0c8d0" strokeWidth="2.5" strokeLinecap="round"/>
-      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke="rgba(255,255,255,0.4)" strokeWidth="1" strokeLinecap="round"/>
-      {/* Вешалки */}
-      {[0.2,0.4,0.6,0.8].map((t,i) => {
-        const hx = p(dw*t,0,0); const hy = p(dw*t,0,-0.5);
-        return <g key={i}>
-          <line x1={hx[0]} y1={hx[1]} x2={hy[0]} y2={hy[1]} stroke="#8090a0" strokeWidth="1"/>
-          <ellipse cx={hy[0]} cy={hy[1]+2} rx={2} ry={1.2} fill="none" stroke="#8090a0" strokeWidth="0.7"/>
-        </g>;
-      })}
-      void pt(A);
+      <line x1={s1[0]} y1={s1[1]+2} x2={s2[0]} y2={s2[1]+2} stroke="rgba(0,0,0,0.2)" strokeWidth="2"/>
+      <IsoBox bx={bx} bz={bz} wx={wx} wy={wy} wz={wz} dw={dw} dd={dd} dh={thick} m={m}
+        faceC={darken(m.f0,3)} topC={lighten(m.t0,10)} sideC={m.s0} />
+      {/* Передний кант — небольшой выступ */}
+      {(() => {
+        const a = p(0,0,thick); const b = p(dw,0,thick);
+        return <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={lighten(m.t0,22)} strokeWidth="0.8" opacity="0.9"/>;
+      })()}
     </g>
   );
 }
 
-// Ящик с ручкой
+// Реалистичная хромированная штанга с кронштейнами и вешалками-плечиками
+function IsoRail({ bx, bz, wx, wy, wz, dw, m }: {
+  bx:number; bz:number; wx:number; wy:number; wz:number; dw:number; m:M;
+}) {
+  void m;
+  const p = (x:number,y:number,z:number) => iso(wx+x,wy+y,wz+z,bx,bz);
+  const A = p(0.02,0,0); const B = p(dw-0.02,0,0);
+  // Кронштейны на концах
+  const kA1 = p(0,0,0.08); const kA2 = p(0.05,0,0);
+  const kB1 = p(dw,0,0.08); const kB2 = p(dw-0.05,0,0);
+  return (
+    <g>
+      {/* Кронштейны */}
+      <line x1={kA1[0]} y1={kA1[1]} x2={kA2[0]} y2={kA2[1]} stroke="#8a93a0" strokeWidth="2" strokeLinecap="round"/>
+      <line x1={kB1[0]} y1={kB1[1]} x2={kB2[0]} y2={kB2[1]} stroke="#8a93a0" strokeWidth="2" strokeLinecap="round"/>
+      {/* Сама штанга — градиент хрома (две линии) */}
+      <line x1={A[0]} y1={A[1]+1} x2={B[0]} y2={B[1]+1} stroke="#5a6270" strokeWidth="3.5" strokeLinecap="round"/>
+      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke="#c8d0d8" strokeWidth="2.8" strokeLinecap="round"/>
+      <line x1={A[0]} y1={A[1]-0.5} x2={B[0]} y2={B[1]-0.5} stroke="#ffffff" strokeWidth="0.8" strokeLinecap="round" opacity="0.8"/>
+      {/* Плечики с одеждой */}
+      {[0.15,0.32,0.5,0.68,0.85].map((t,i) => {
+        const hang = p(dw*t,0,-0.02);
+        const clW = 18; const clH = 26;
+        // Крюк плечика
+        const hookTop = p(dw*t,0,0.02);
+        return <g key={i}>
+          <path d={`M${hookTop[0]},${hookTop[1]} Q${hookTop[0]+3},${hookTop[1]-4} ${hookTop[0]+5},${hookTop[1]}`}
+            stroke="#606878" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+          {/* Плечики — треугольник */}
+          <path d={`M${hang[0]-clW/2},${hang[1]+3} L${hang[0]+clW/2},${hang[1]+3} L${hang[0]},${hang[1]}Z`}
+            fill="none" stroke="#707880" strokeWidth="0.8"/>
+          {/* Одежда — прямоугольник */}
+          <rect x={hang[0]-clW/2} y={hang[1]+3} width={clW} height={clH}
+            fill={["#8a7a6a","#3a5a7a","#6a4a3a","#5a6a5a","#4a3a4a"][i]} opacity="0.75" rx="1"/>
+          <rect x={hang[0]-clW/2} y={hang[1]+3} width={clW*0.25} height={clH}
+            fill="rgba(255,255,255,0.12)" rx="1"/>
+        </g>;
+      })}
+    </g>
+  );
+}
+
+// Реалистичный ящик: лицевая панель с зазором, ручка-скоба или утопленная
 function IsoDrawer({ bx, bz, wx, wy, wz, dw, dd, dh, m }: {
   bx:number; bz:number; wx:number; wy:number; wz:number; dw:number; dd:number; dh:number; m:M;
 }) {
   const p = (x:number,y:number,z:number) => iso(wx+x,wy+y,wz+z,bx,bz);
   const pt = ([x,y]:[number,number]) => `${x.toFixed(1)},${y.toFixed(1)}`;
 
-  // Лицевая панель ящика чуть светлее основного
-  const faceC = lighten(m.f0, 6);
-  const A = p(0,0,0); const B = p(dw,0,0); const F = p(dw,0,dh); const E = p(0,0,dh);
-  // Ручка по центру
-  const hx1 = p(dw*0.38, -0.05, dh*0.5); const hx2 = p(dw*0.62, -0.05, dh*0.5);
+  // Лицевая панель ящика слегка светлее с мягким градиентом
+  const faceC = lighten(m.f0, 4);
+
+  // Рамка-шов вокруг ящика
+  const gap = 0.015;
+  const A = p(gap,0,gap); const B = p(dw-gap,0,gap); const F = p(dw-gap,0,dh-gap); const E = p(gap,0,dh-gap);
 
   return (
     <g>
-      <IsoBox bx={bx} bz={bz} wx={wx+0.02} wy={wy} wz={wz} dw={dw-0.04} dd={dd} dh={dh-0.08}
-        m={m} faceC={faceC} topC={m.t0} sideC={m.s0} />
-      {/* Паз ящика */}
+      {/* Сам ящик (корпус — видимая лицевая панель + чуть-чуть объёма) */}
+      <IsoBox bx={bx} bz={bz} wx={wx+gap} wy={wy} wz={wz+gap} dw={dw-gap*2} dd={dd} dh={dh-gap*2}
+        m={m} faceC={faceC} topC={lighten(m.t0,4)} sideC={m.s0} />
+
+      {/* Тёмный внутренний контур — создаёт шов */}
       <polygon points={`${pt(A)} ${pt(B)} ${pt(F)} ${pt(E)}`}
-        fill="none" stroke={darken(m.edge,20)} strokeWidth="0.3" />
-      {/* Ручка */}
-      <line x1={hx1[0]} y1={hx1[1]} x2={hx2[0]} y2={hx2[1]}
-        stroke={darken(m.handle,10)} strokeWidth="2.5" strokeLinecap="round"/>
-      <line x1={hx1[0]} y1={hx1[1]} x2={hx2[0]} y2={hx2[1]}
-        stroke={lighten(m.handle,20)} strokeWidth="1.2" strokeLinecap="round"/>
+        fill="none" stroke={darken(m.edge,25)} strokeWidth="0.5" opacity="0.6" />
+
+      {/* Ручка-скоба с подложкой */}
+      {(() => {
+        const hx1 = p(dw*0.3, -0.04, dh*0.75); const hx2 = p(dw*0.7, -0.04, dh*0.75);
+        return <g>
+          <line x1={hx1[0]} y1={hx1[1]+2} x2={hx2[0]} y2={hx2[1]+2}
+            stroke="rgba(0,0,0,0.28)" strokeWidth="3.5" strokeLinecap="round"/>
+          <line x1={hx1[0]} y1={hx1[1]} x2={hx2[0]} y2={hx2[1]}
+            stroke={darken(m.handle,5)} strokeWidth="3" strokeLinecap="round"/>
+          <line x1={hx1[0]} y1={hx1[1]-0.8} x2={hx2[0]} y2={hx2[1]-0.8}
+            stroke={lighten(m.handle,35)} strokeWidth="1.2" strokeLinecap="round"/>
+          <circle cx={hx1[0]} cy={hx1[1]} r={1.8} fill={darken(m.handle,15)}/>
+          <circle cx={hx2[0]} cy={hx2[1]} r={1.8} fill={darken(m.handle,15)}/>
+        </g>;
+      })()}
     </g>
   );
 }
@@ -192,41 +237,52 @@ function IsoDoor({ bx, bz, wx, wy, wz, dw, dd, dh, m, facade="matte", handleSide
   const hx = handleSide === "right" ? dw*0.82 : dw*0.18;
   const hA = p(hx, -0.05, dh*0.42); const hB = p(hx, -0.05, dh*0.58);
 
+  // Нижнее ребро для подсветки
+  const faceShade = darken(faceC, 10);
+
   return (
     <g opacity={opacity}>
-      {/* Основная панель */}
+      {/* Основная панель с вертикальным градиентом (имитация) */}
       <polygon points={`${pt(A)} ${pt(B)} ${pt(F)} ${pt(E)}`}
         fill={faceC} stroke={m.edge} strokeWidth="0.5"/>
+      {/* Нижняя тень на фасаде */}
+      <polygon points={`${pt(A)} ${pt(B)} ${p(dw,0,dh*0.3)[0]},${p(dw,0,dh*0.3)[1]} ${p(0,0,dh*0.3)[0]},${p(0,0,dh*0.3)[1]}`}
+        fill={faceShade} opacity="0.35"/>
+      {/* Верхний светлый блик */}
+      <line x1={E[0]} y1={E[1]} x2={F[0]} y2={F[1]} stroke={lighten(faceC,18)} strokeWidth="0.7" opacity="0.7"/>
       {/* Зеркальный блик */}
       {facade === "mirror" && <>
         <polygon points={`${pt(A)} ${pt(B)} ${pt(F)} ${pt(E)}`} fill="rgba(200,230,245,0.3)"/>
-        <polygon points={`${pt(A)} ${pt(p(dw*0.22,0,0))} ${pt(p(dw*0.18,0,dh))} ${pt(E)}`} fill="rgba(255,255,255,0.25)"/>
+        <polygon points={`${pt(A)} ${pt(p(dw*0.22,0,0))} ${pt(p(dw*0.18,0,dh))} ${pt(E)}`} fill="rgba(255,255,255,0.28)"/>
+        {/* Вертикальный блик */}
+        <polygon points={`${pt(p(dw*0.55,0,0))} ${pt(p(dw*0.62,0,0))} ${pt(p(dw*0.58,0,dh))} ${pt(p(dw*0.51,0,dh))}`} fill="rgba(255,255,255,0.15)"/>
       </>}
       {/* Глянцевый блик */}
       {facade === "glossy" && <>
-        <polygon points={`${pt(E)} ${pt(p(dw*0.28,0,dh))} ${pt(p(dw*0.22,0,dh*0.3))} ${pt(p(0,0,dh*0.3))}`} fill="rgba(255,255,255,0.25)"/>
+        <polygon points={`${pt(p(dw*0.05,0,dh*0.95))} ${pt(p(dw*0.32,0,dh*0.95))} ${pt(p(dw*0.22,0,dh*0.2))} ${pt(p(dw*0.05,0,dh*0.2))}`} fill="rgba(255,255,255,0.26)"/>
       </>}
       {/* Стеклянная вставка */}
       {facade === "glass" && <>
-        <polygon points={`${pt(I1)} ${pt(I2)} ${pt(I3)} ${pt(I4)}`} fill="rgba(180,215,235,0.5)" stroke="rgba(150,190,210,0.7)" strokeWidth="0.4"/>
-        <polygon points={`${pt(I1)} ${pt(p(dw*(inset+0.1),0,dh*inset))} ${pt(p(dw*(inset+0.07),0,dh*(1-inset)))} ${pt(I4)}`} fill="rgba(255,255,255,0.2)"/>
+        <polygon points={`${pt(I1)} ${pt(I2)} ${pt(I3)} ${pt(I4)}`} fill="rgba(180,215,235,0.55)" stroke="rgba(150,190,210,0.7)" strokeWidth="0.4"/>
+        <polygon points={`${pt(I1)} ${pt(p(dw*(inset+0.1),0,dh*inset))} ${pt(p(dw*(inset+0.07),0,dh*(1-inset)))} ${pt(I4)}`} fill="rgba(255,255,255,0.25)"/>
       </>}
-      {/* Рамка двери */}
+      {/* Рамка-шов (филёнка) */}
       <polygon points={`${pt(I1)} ${pt(I2)} ${pt(I3)} ${pt(I4)}`}
-        fill="none" stroke={darken(m.edge,15)} strokeWidth="0.5"/>
+        fill="none" stroke={darken(m.edge,18)} strokeWidth="0.5" opacity="0.7"/>
       {/* Волокна дерева */}
-      {(facade === "wood" || m.grain) && [0.2,0.4,0.58,0.75,0.9].map((t,i) => {
+      {(facade === "wood" || m.grain) && [0.15,0.3,0.45,0.6,0.75,0.88].map((t,i) => {
         const a = p(dw*t,0,0); const b = p(dw*t,0,dh);
-        return <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="rgba(0,0,0,0.07)" strokeWidth="0.6"/>;
+        return <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="rgba(0,0,0,0.08)" strokeWidth="0.5"/>;
       })}
-      {/* Ручка */}
-      <line x1={hA[0]} y1={hA[1]} x2={hB[0]} y2={hB[1]} stroke={darken(m.handle,15)} strokeWidth="3" strokeLinecap="round"/>
-      <line x1={hA[0]} y1={hA[1]} x2={hB[0]} y2={hB[1]} stroke={lighten(m.handle,25)} strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Ручка с тенью и бликом */}
+      <line x1={hA[0]+1.5} y1={hA[1]+1.5} x2={hB[0]+1.5} y2={hB[1]+1.5} stroke="rgba(0,0,0,0.3)" strokeWidth="3.5" strokeLinecap="round"/>
+      <line x1={hA[0]} y1={hA[1]} x2={hB[0]} y2={hB[1]} stroke={darken(m.handle,10)} strokeWidth="3" strokeLinecap="round"/>
+      <line x1={hA[0]-0.6} y1={hA[1]-0.6} x2={hB[0]-0.6} y2={hB[1]-0.6} stroke={lighten(m.handle,32)} strokeWidth="1.3" strokeLinecap="round"/>
     </g>
   );
 }
 
-// Горизонтальная ручка
+// Реалистичная горизонтальная ручка-скоба с тенью и бликом
 function IsoHandleH({ bx, bz, wx, wy, wz, len, m }: {
   bx:number; bz:number; wx:number; wy:number; wz:number; len:number; m:M;
 }) {
@@ -234,8 +290,15 @@ function IsoHandleH({ bx, bz, wx, wy, wz, len, m }: {
   const A = p(0,-0.06,0); const B = p(len,-0.06,0);
   return (
     <g>
-      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke={darken(m.handle,15)} strokeWidth="3" strokeLinecap="round"/>
-      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke={lighten(m.handle,20)} strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Тень */}
+      <line x1={A[0]+1.2} y1={A[1]+1.8} x2={B[0]+1.2} y2={B[1]+1.8} stroke="rgba(0,0,0,0.3)" strokeWidth="3.5" strokeLinecap="round"/>
+      {/* Основа */}
+      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke={darken(m.handle,10)} strokeWidth="3" strokeLinecap="round"/>
+      {/* Блик */}
+      <line x1={A[0]} y1={A[1]-0.7} x2={B[0]} y2={B[1]-0.7} stroke={lighten(m.handle,30)} strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Крепления по бокам */}
+      <circle cx={A[0]} cy={A[1]} r={1.6} fill={darken(m.handle,20)}/>
+      <circle cx={B[0]} cy={B[1]} r={1.6} fill={darken(m.handle,20)}/>
     </g>
   );
 }

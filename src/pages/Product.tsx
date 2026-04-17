@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { PRODUCTS } from "@/data/products";
 import Icon from "@/components/ui/icon";
@@ -9,8 +9,13 @@ const formatPrice = (n: number) =>
 export default function Product() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [activeImg, setActiveImg] = useState(0);
 
-  useEffect(() => { window.scrollTo(0, 0); }, [id]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    setActiveImg(0);
+  }, [id]);
+
   const product = PRODUCTS.find((p) => p.id === Number(id));
 
   if (!product) {
@@ -25,7 +30,11 @@ export default function Product() {
     );
   }
 
+  const images = product.images ?? [product.img];
   const related = PRODUCTS.filter((p) => p.id !== product.id && p.category === product.category).slice(0, 3);
+
+  const prev = () => setActiveImg((i) => (i - 1 + images.length) % images.length);
+  const next = () => setActiveImg((i) => (i + 1) % images.length);
 
   return (
     <div className="min-h-screen bg-[#f9f9f7] font-body text-[#111]">
@@ -45,15 +54,62 @@ export default function Product() {
 
       <div className="pt-14 max-w-5xl mx-auto px-5 md:px-10 py-8 md:py-16">
         <div className="grid md:grid-cols-2 gap-8 md:gap-16">
-          {/* Image */}
-          <div className="relative">
-            <div className="aspect-[4/3] bg-[#eee] overflow-hidden">
-              <img src={product.img} alt={product.name} className="w-full h-full object-cover" />
+
+          {/* Галерея */}
+          <div className="flex flex-col gap-3">
+            {/* Главное фото */}
+            <div className="relative aspect-[4/3] bg-[#eee] overflow-hidden group">
+              {images.map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt={`${product.name} ${i + 1}`}
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-400 ${i === activeImg ? "opacity-100" : "opacity-0"}`}
+                />
+              ))}
+
+              {product.tag && (
+                <span className="absolute top-4 left-4 bg-[#111] text-white text-[9px] tracking-widest uppercase px-3 py-1.5 z-10">
+                  {product.tag}
+                </span>
+              )}
+
+              {/* Стрелки */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={prev}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 hover:bg-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-10"
+                  >
+                    <Icon name="ChevronLeft" size={18} />
+                  </button>
+                  <button
+                    onClick={next}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 hover:bg-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-10"
+                  >
+                    <Icon name="ChevronRight" size={18} />
+                  </button>
+                  {/* Счётчик */}
+                  <div className="absolute bottom-3 right-3 bg-black/50 text-white text-[10px] tracking-widest px-2 py-1 z-10">
+                    {activeImg + 1} / {images.length}
+                  </div>
+                </>
+              )}
             </div>
-            {product.tag && (
-              <span className="absolute top-4 left-4 bg-[#111] text-white text-[9px] tracking-widest uppercase px-3 py-1.5">
-                {product.tag}
-              </span>
+
+            {/* Миниатюры */}
+            {images.length > 1 && (
+              <div className="flex gap-2">
+                {images.map((src, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImg(i)}
+                    className={`flex-1 aspect-[4/3] overflow-hidden border-2 transition-all ${i === activeImg ? "border-[#111]" : "border-transparent opacity-60 hover:opacity-90"}`}
+                  >
+                    <img src={src} alt={`${product.name} ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 

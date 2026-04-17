@@ -240,6 +240,9 @@ export default function FurnitureCalculator() {
                 type={s.type} material={previewMat}
                 color={previewColor}
                 style={s.shape}
+                facade={s.facade}
+                texture={s.texture}
+                filling={s.filling}
                 width={s.width} height={s.height} depth={s.depth}
               />
             </div>
@@ -550,6 +553,9 @@ export default function FurnitureCalculator() {
             type={s.type} material={previewMat}
             color={previewColor}
             style={s.shape}
+            facade={s.facade}
+            texture={s.texture}
+            filling={s.filling}
             width={s.width} height={s.height} depth={s.depth}
           />
         </div>

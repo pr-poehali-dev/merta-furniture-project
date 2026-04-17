@@ -3,8 +3,11 @@ import { useMemo } from "react";
 interface Props {
   type: string;
   material: string;
-  color?: string;       // hex цвет выбранного цвета
+  color?: string;
   style: string;
+  facade?: string;   // matte | glossy | wood | glass | mirror | fabric | velvet | leather | ...
+  texture?: string;  // smooth | brushed | aged | emboss
+  filling?: Record<string, number>; // id → qty
   width: number;
   height: number;
   depth: number;
@@ -144,8 +147,218 @@ function Handle({ x, y, len = 18, vert = false, color }: {
   );
 }
 
+// ─── ВСПОМОГАТЕЛЬНЫЕ РЕНДЕРЫ ──────────────────────────────────────────────────
+
+// Оверлей фасада поверх прямоугольника (px,py — верхний левый угол, W,H — размеры)
+function FacadeOverlay({ px, py, W, H, facade }: {
+  px:number; py:number; W:number; H:number; facade:string;
+}) {
+  switch (facade) {
+    case "glossy":
+      return (
+        <g>
+          <defs>
+            <linearGradient id="gls" x1="0" y1="0" x2="0.35" y2="1">
+              <stop offset="0%" stopColor="white" stopOpacity="0.32"/>
+              <stop offset="60%" stopColor="white" stopOpacity="0.06"/>
+              <stop offset="100%" stopColor="white" stopOpacity="0"/>
+            </linearGradient>
+          </defs>
+          <rect x={px} y={py} width={W} height={H} fill="url(#gls)" />
+        </g>
+      );
+    case "mirror":
+      return (
+        <g>
+          <rect x={px} y={py} width={W} height={H} fill="rgba(185,220,240,0.28)" />
+          <rect x={px} y={py} width={W*0.18} height={H} fill="rgba(255,255,255,0.2)" />
+        </g>
+      );
+    case "glass":
+      return (
+        <g>
+          <rect x={px+W*0.08} y={py+H*0.06} width={W*0.84} height={H*0.88}
+            fill="rgba(180,215,235,0.3)" stroke="rgba(150,190,215,0.5)" strokeWidth="0.8" rx="1"/>
+          <rect x={px+W*0.08} y={py+H*0.06} width={W*0.16} height={H*0.88}
+            fill="rgba(255,255,255,0.15)"/>
+        </g>
+      );
+    case "wood":
+      return (
+        <g>
+          {[0.15,0.32,0.5,0.67,0.84].map((t,i) => (
+            <line key={i} x1={px+W*t} y1={py} x2={px+W*t} y2={py+H}
+              stroke="rgba(0,0,0,0.09)" strokeWidth="0.9"/>
+          ))}
+        </g>
+      );
+    case "texture": case "emboss":
+      return (
+        <g>
+          {Array.from({length: Math.floor(H/8)}).map((_,i) => (
+            <line key={i} x1={px} y1={py+i*8+4} x2={px+W} y2={py+i*8+4}
+              stroke="rgba(0,0,0,0.05)" strokeWidth="0.6"/>
+          ))}
+        </g>
+      );
+    case "fabric": case "chenille":
+      return (
+        <g>
+          {Array.from({length: Math.floor(W/6)}).map((_,i) => (
+            <line key={i} x1={px+i*6+3} y1={py} x2={px+i*6+3} y2={py+H}
+              stroke="rgba(0,0,0,0.04)" strokeWidth="0.5"/>
+          ))}
+          {Array.from({length: Math.floor(H/6)}).map((_,i) => (
+            <line key={i} x1={px} y1={py+i*6+3} x2={px+W} y2={py+i*6+3}
+              stroke="rgba(0,0,0,0.04)" strokeWidth="0.5"/>
+          ))}
+        </g>
+      );
+    case "velvet":
+      return (
+        <g>
+          <rect x={px} y={py} width={W} height={H} fill="rgba(255,255,255,0.06)"/>
+          {Array.from({length: Math.floor(H/4)}).map((_,i) => (
+            <line key={i} x1={px} y1={py+i*4+2} x2={px+W} y2={py+i*4+2}
+              stroke="rgba(255,255,255,0.08)" strokeWidth="0.5"/>
+          ))}
+        </g>
+      );
+    case "leather":
+      return (
+        <g>
+          <rect x={px} y={py} width={W} height={H} fill="rgba(255,255,255,0.04)"/>
+          {[0.33,0.66].map((t,i) => (
+            <line key={i} x1={px} y1={py+H*t} x2={px+W} y2={py+H*t}
+              stroke="rgba(0,0,0,0.12)" strokeWidth="1" strokeDasharray="4 3"/>
+          ))}
+        </g>
+      );
+    default: return null;
+  }
+}
+
+// Текстурный оверлей по всему корпусу
+function TextureLayer({ px, py, W, H, texture }: {
+  px:number; py:number; W:number; H:number; texture:string;
+}) {
+  if (texture === "brushed") {
+    return (
+      <g>
+        {Array.from({length: Math.floor(W/5)}).map((_,i) => (
+          <line key={i} x1={px+i*5+2} y1={py} x2={px+i*5+2} y2={py+H}
+            stroke="rgba(255,255,255,0.07)" strokeWidth="0.5"/>
+        ))}
+      </g>
+    );
+  }
+  if (texture === "aged") {
+    return (
+      <g>
+        {[[0.2,0.1,0.35,0.6],[0.6,0.3,0.75,0.8],[0.4,0.7,0.55,0.9],[0.8,0.15,0.9,0.45]].map(([x1r,y1r,x2r,y2r],i) => (
+          <line key={i}
+            x1={px+W*x1r} y1={py+H*y1r} x2={px+W*x2r} y2={py+H*y2r}
+            stroke="rgba(0,0,0,0.08)" strokeWidth="0.7" strokeLinecap="round"/>
+        ))}
+      </g>
+    );
+  }
+  if (texture === "emboss") {
+    return (
+      <g>
+        {Array.from({length: Math.floor(H/10)}).map((_,i) => (
+          <rect key={i} x={px+2} y={py+i*10+2} width={W-4} height={6}
+            fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" rx="1"/>
+        ))}
+      </g>
+    );
+  }
+  return null;
+}
+
+// Иконки наполнения внутри корпуса (видны как схематичные линии)
+function FillingViz({ px, py, W, H, filling }: {
+  px:number; py:number; W:number; H:number; filling: Record<string,number>;
+}) {
+  const items: React.ReactNode[] = [];
+  let offsetY = 0;
+  const totalQty = Object.values(filling).reduce((s,q) => s+q, 0);
+  if (totalQty === 0) return null;
+
+  // Полки — горизонтальные линии
+  const shelves = filling["shelf"] ?? 0;
+  for (let i = 0; i < Math.min(shelves, 6); i++) {
+    const y = py + H*0.15 + (H*0.7/(Math.min(shelves,6)+1))*(i+1);
+    items.push(
+      <g key={`shelf-${i}`}>
+        <line x1={px+2} y1={y} x2={px+W-2} y2={y}
+          stroke="rgba(255,255,255,0.55)" strokeWidth="1.5"/>
+        <line x1={px+W-2} y1={y} x2={px+W-2+H*0.015} y2={y-H*0.01}
+          stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
+      </g>
+    );
+    offsetY = y;
+  }
+
+  // Штанга — горизонтальная с кружочком
+  const rails = filling["rail"] ?? 0;
+  if (rails > 0) {
+    const y = py + H * 0.28;
+    items.push(
+      <g key="rail">
+        <line x1={px+W*0.1} y1={y} x2={px+W*0.9} y2={y}
+          stroke="rgba(200,210,220,0.7)" strokeWidth="2" strokeLinecap="round"/>
+        {[0.25,0.45,0.65].map((t,i) => (
+          <g key={i}>
+            <line x1={px+W*t} y1={y} x2={px+W*t} y2={y+H*0.15}
+              stroke="rgba(200,210,220,0.5)" strokeWidth="0.8"/>
+            <ellipse cx={px+W*t} cy={y+H*0.15} rx={2.5} ry={1.5}
+              fill="none" stroke="rgba(200,210,220,0.5)" strokeWidth="0.7"/>
+          </g>
+        ))}
+      </g>
+    );
+  }
+
+  // Ящики — прямоугольники внизу
+  const drawers = filling["drawer"] ?? 0;
+  for (let i = 0; i < Math.min(drawers, 4); i++) {
+    const dH = H * 0.12;
+    const y = py + H - dH*(i+1) - i*2 - 2;
+    items.push(
+      <g key={`drawer-${i}`}>
+        <rect x={px+3} y={y} width={W-6} height={dH-1} rx="1"
+          fill="rgba(0,0,0,0.15)" stroke="rgba(255,255,255,0.3)" strokeWidth="0.8"/>
+        <line x1={px+W*0.4} y1={y+dH*0.5} x2={px+W*0.6} y2={y+dH*0.5}
+          stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" strokeLinecap="round"/>
+      </g>
+    );
+  }
+
+  // Крючки
+  const hooks = filling["hook"] ?? 0;
+  if (hooks > 0) {
+    const count = Math.min(hooks, 5);
+    for (let i = 0; i < count; i++) {
+      const x = px + W*(0.15 + 0.7*i/(count-1||1));
+      items.push(
+        <g key={`hook-${i}`}>
+          <circle cx={x} cy={py+H*0.12} r={2} fill="rgba(200,210,220,0.8)"/>
+          <path d={`M${x},${py+H*0.12} Q${x+5},${py+H*0.22} ${x+3},${py+H*0.32}`}
+            stroke="rgba(200,210,220,0.6)" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+        </g>
+      );
+    }
+  }
+
+  void offsetY;
+  return <g>{items}</g>;
+}
+
+type SvgProps = { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string; facade?:string; texture?:string; filling?:Record<string,number> };
+
 // ─── КУХНЯ ───────────────────────────────────────────────────────────────────
-function KitchenSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+function KitchenSVG({ W, H, D, m, id, facade="matte", texture="smooth", filling={} }: SvgProps) {
   const BH = H*0.42; const UH = H*0.35; const TH = 6; const GAP = H*0.07;
   const UW = W*0.85; const UX = W*0.075;
   const ox = 20, oy = 175;
@@ -176,8 +389,23 @@ function KitchenSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:Return
       <line x1={ox+UX+UW*0.5} y1={oy-BH-TH-GAP} x2={ox+UX+UW*0.5} y2={oy-BH-TH-GAP-UH}
         stroke={m.edge} strokeWidth="0.8" />
 
-      {[0.14,0.47,0.8].map((t,i) => <Handle key={i} x={ox+W*t} y={oy-BH*0.42} len={16} color={m.handle} />)}
-      {[0.2,0.72].map((t,i) => <Handle key={i} x={ox+UX+UW*t} y={oy-BH-TH-GAP-UH*0.65} len={14} color={m.handle} />)}
+      {/* Фасад нижнего ряда */}
+      {[0,1,2].map(i => (
+        <FacadeOverlay key={i} px={ox+W/3*i+1} py={oy-BH+2} W={W/3-2} H={BH-4} facade={facade} />
+      ))}
+      {/* Текстура нижних фасадов */}
+      <TextureLayer px={ox} py={oy-BH} W={W} H={BH} texture={texture} />
+
+      {/* Ручки — без ручек если стеклянные */}
+      {facade !== "glass" && [0.14,0.47,0.8].map((t,i) => <Handle key={i} x={ox+W*t} y={oy-BH*0.42} len={16} color={m.handle} />)}
+      {facade !== "glass" && [0.2,0.72].map((t,i) => <Handle key={i} x={ox+UX+UW*t} y={oy-BH-TH-GAP-UH*0.65} len={14} color={m.handle} />)}
+
+      {/* Фасад верхних шкафов */}
+      <FacadeOverlay px={ox+UX+1} py={oy-BH-TH-GAP-UH+2} W={UW-2} H={UH-4} facade={facade} />
+      <TextureLayer px={ox+UX} py={oy-BH-TH-GAP-UH} W={UW} H={UH} texture={texture} />
+
+      {/* Наполнение нижних ящиков */}
+      <FillingViz px={ox} py={oy-BH} W={W} H={BH} filling={filling} />
 
       <polygon points={`${ox},${oy-BH-TH} ${ox+W},${oy-BH-TH} ${ox+W},${oy-BH-TH-GAP} ${ox},${oy-BH-TH-GAP}`}
         fill="rgba(200,210,220,0.5)" stroke="rgba(150,160,170,0.4)" strokeWidth="0.5" />
@@ -190,7 +418,7 @@ function KitchenSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:Return
 }
 
 // ─── ШКАФ-КУПЕ ───────────────────────────────────────────────────────────────
-function WardrobeSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+function WardrobeSVG({ W, H, D, m, id, facade="matte", texture="smooth", filling={} }: SvgProps) {
   const ox = 18, oy = 175;
   const PH = H*0.04;
 
@@ -208,34 +436,46 @@ function WardrobeSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:Retur
       <Box id={id} m={m} px={ox} py={oy-PH-(H-PH)+4} W={W} H={4} D={D*0.3}
         faceOverride="#999" topOverride="#bbb" sideOverride="#888" />
 
-      <polygon
-        points={`${ox+2},${oy-PH-4} ${ox+W*0.49},${oy-PH-4} ${ox+W*0.49},${oy-PH-(H-PH)+8} ${ox+2},${oy-PH-(H-PH)+8}`}
-        fill="rgba(185,215,235,0.35)" stroke="rgba(180,210,230,0.6)" strokeWidth="0.8" />
-      <polygon
-        points={`${ox+2},${oy-PH-4} ${ox+W*0.18},${oy-PH-4} ${ox+W*0.14},${oy-PH-(H-PH)+8} ${ox+2},${oy-PH-(H-PH)+8}`}
-        fill="rgba(255,255,255,0.18)" />
+      {/* Левая дверь: зеркало или фасад */}
+      {facade === "mirror" ? (
+        <>
+          <polygon
+            points={`${ox+2},${oy-PH-4} ${ox+W*0.49},${oy-PH-4} ${ox+W*0.49},${oy-PH-(H-PH)+8} ${ox+2},${oy-PH-(H-PH)+8}`}
+            fill="rgba(185,215,235,0.38)" stroke="rgba(180,210,230,0.7)" strokeWidth="0.8" />
+          <polygon points={`${ox+2},${oy-PH-4} ${ox+W*0.18},${oy-PH-4} ${ox+W*0.14},${oy-PH-(H-PH)+8} ${ox+2},${oy-PH-(H-PH)+8}`}
+            fill="rgba(255,255,255,0.22)" />
+        </>
+      ) : (
+        <>
+          <polygon
+            points={`${ox+2},${oy-PH-4} ${ox+W*0.49},${oy-PH-4} ${ox+W*0.49},${oy-PH-(H-PH)+8} ${ox+2},${oy-PH-(H-PH)+8}`}
+            fill={`url(#gF${id})`} stroke={m.edge} strokeWidth="0.5" />
+          <FacadeOverlay px={ox+2} py={oy-PH-(H-PH)+8} W={W*0.47} H={(H-PH)-12} facade={facade} />
+          <TextureLayer px={ox+2} py={oy-PH-(H-PH)+8} W={W*0.47} H={(H-PH)-12} texture={texture} />
+        </>
+      )}
 
+      {/* Правая дверь: всегда с фасадом */}
       <polygon
         points={`${ox+W*0.51},${oy-PH-4} ${ox+W-2},${oy-PH-4} ${ox+W-2},${oy-PH-(H-PH)+8} ${ox+W*0.51},${oy-PH-(H-PH)+8}`}
         fill={`url(#gF${id})`} stroke={m.edge} strokeWidth="0.5" />
-      {m.grain && [0.58,0.66,0.74,0.82,0.9].map((t,i) => (
-        <line key={i} x1={ox+W*t} y1={oy-PH-4} x2={ox+W*t} y2={oy-PH-(H-PH)+8}
-          stroke="rgba(0,0,0,0.06)" strokeWidth="0.7" />
-      ))}
-      {m.gloss && (
-        <polygon
-          points={`${ox+W*0.51},${oy-PH-4} ${ox+W*0.68},${oy-PH-4} ${ox+W*0.65},${oy-PH-(H-PH)+8} ${ox+W*0.51},${oy-PH-(H-PH)+8}`}
-          fill="rgba(255,255,255,0.14)" />
-      )}
+      <FacadeOverlay px={ox+W*0.51} py={oy-PH-(H-PH)+8} W={W*0.47} H={(H-PH)-12} facade={facade} />
+      <TextureLayer px={ox+W*0.51} py={oy-PH-(H-PH)+8} W={W*0.47} H={(H-PH)-12} texture={texture} />
 
-      <Handle x={ox+W*0.44} y={oy-PH-(H-PH)*0.52} len={12} vert color={m.handle} />
-      <Handle x={ox+W*0.54} y={oy-PH-(H-PH)*0.52} len={12} vert color={m.handle} />
+      {/* Ручки */}
+      {facade !== "mirror" && <>
+        <Handle x={ox+W*0.44} y={oy-PH-(H-PH)*0.52} len={12} vert color={m.handle} />
+        <Handle x={ox+W*0.54} y={oy-PH-(H-PH)*0.52} len={12} vert color={m.handle} />
+      </>}
+
+      {/* Наполнение — показываем сквозь прозрачную дверь */}
+      <FillingViz px={ox+2} py={oy-PH-(H-PH)+8} W={W*0.47} H={(H-PH)-12} filling={filling} />
     </svg>
   );
 }
 
 // ─── ДИВАН ───────────────────────────────────────────────────────────────────
-function SofaSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+function SofaSVG({ W, H, D, m, id, facade="fabric", texture="smooth", filling={} }: SvgProps) {
   const ox = 12, oy = 172;
   const armW = W*0.11; const seatH = H*0.36; const backH = H*0.5; const legH = H*0.14;
   const legColor = m.grain ? "#3d2008" : "#444";
@@ -251,7 +491,14 @@ function SofaSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnTyp
       ))}
 
       <Box id={id} m={m} px={ox} py={oy-legH} W={W} H={seatH} D={D} />
+      {/* Текстура/фасад обивки сиденья */}
+      <FacadeOverlay px={ox} py={oy-legH-seatH} W={W} H={seatH} facade={facade} />
+      <TextureLayer  px={ox} py={oy-legH-seatH} W={W} H={seatH} texture={texture} />
+
       <Box id={id} m={m} px={ox} py={oy-legH-seatH} W={W} H={backH} D={D*0.25} />
+      {/* Текстура/фасад спинки */}
+      <FacadeOverlay px={ox} py={oy-legH-seatH-backH} W={W} H={backH} facade={facade} />
+      <TextureLayer  px={ox} py={oy-legH-seatH-backH} W={W} H={backH} texture={texture} />
 
       <Box id={id} m={m} px={ox} py={oy-legH} W={armW} H={seatH+backH*0.72} D={D}
         faceOverride={m.f1} topOverride={m.t0} sideOverride={m.s1} />
@@ -276,7 +523,7 @@ function SofaSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnTyp
 }
 
 // ─── СПАЛЬНЯ ─────────────────────────────────────────────────────────────────
-function BedroomSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+function BedroomSVG({ W, H, D, m, id, facade="matte", texture="smooth", filling={} }: SvgProps) {
   const ox = 14, oy = 170;
   const frameH = H*0.18; const mattH = H*0.2; const headH = H*0.55; const legH = H*0.07;
   const cx = D*0.866; const cy = D*0.5;
@@ -316,12 +563,9 @@ function BedroomSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:Return
       ))}
 
       <Box id={id} m={m} px={ox} py={oy-legH-frameH-mattH} W={W} H={headH} D={D*0.15} />
-      <polygon points={`
-        ${ox+W*0.05},${oy-legH-frameH-mattH-headH*0.9}
-        ${ox+W*0.95},${oy-legH-frameH-mattH-headH*0.9}
-        ${ox+W*0.95},${oy-legH-frameH-mattH-headH*0.06}
-        ${ox+W*0.05},${oy-legH-frameH-mattH-headH*0.06}
-      `} fill={m.gloss ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.07)"} />
+      {/* Фасад и текстура изголовья */}
+      <FacadeOverlay px={ox+W*0.05} py={oy-legH-frameH-mattH-headH*0.9} W={W*0.9} H={headH*0.84} facade={facade} />
+      <TextureLayer  px={ox+W*0.05} py={oy-legH-frameH-mattH-headH*0.9} W={W*0.9} H={headH*0.84} texture={texture} />
       <line x1={ox+W*0.05} y1={oy-legH-frameH-mattH-headH*0.5}
         x2={ox+W*0.95} y2={oy-legH-frameH-mattH-headH*0.5}
         stroke={m.edge} strokeWidth="0.5" strokeDasharray="3 3" />
@@ -330,12 +574,14 @@ function BedroomSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:Return
         <Box key={i} id={id} m={m} px={ox+dx} py={oy-legH}
           W={W*0.18} H={mattH+frameH*0.5} D={D*0.55} opacity={0.9} />
       ))}
+      {/* Ящики под кроватью */}
+      <FillingViz px={ox} py={oy-legH} W={W} H={frameH} filling={filling} />
     </svg>
   );
 }
 
 // ─── ПРИХОЖАЯ ────────────────────────────────────────────────────────────────
-function HallawaySVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+function HallawaySVG({ W, H, D, m, id, facade="matte", texture="smooth", filling={} }: SvgProps) {
   const ox = 20, oy = 175;
   const shoeH = H*0.25; const bodyH = H*0.55;
 
@@ -345,9 +591,14 @@ function HallawaySVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:Retur
       <ellipse cx={ox+W*0.5} cy={oy+4} rx={W*0.48} ry={6} fill={`url(#gSh${id})`} filter={`url(#blur${id})`} />
 
       <Box id={id} m={m} px={ox} py={oy} W={W} H={shoeH} D={D} />
+      <FacadeOverlay px={ox+1} py={oy-shoeH+1} W={W-2} H={shoeH-2} facade={facade} />
+      <TextureLayer  px={ox+1} py={oy-shoeH+1} W={W-2} H={shoeH-2} texture={texture} />
       <Handle x={ox+W*0.38} y={oy-shoeH*0.45} len={W*0.24} color={m.handle} />
 
       <Box id={id} m={m} px={ox} py={oy-shoeH} W={W} H={bodyH} D={D*0.65} />
+      <FacadeOverlay px={ox+1} py={oy-shoeH-bodyH+1} W={W-2} H={bodyH-2} facade={facade} />
+      <TextureLayer  px={ox+1} py={oy-shoeH-bodyH+1} W={W-2} H={bodyH-2} texture={texture} />
+      <FillingViz    px={ox+1} py={oy-shoeH-bodyH+1} W={W-2} H={bodyH-2} filling={filling} />
       {[0.3,0.62].map((t,i) => (
         <Box key={i} id={id} m={m} px={ox+W*0.03} py={oy-shoeH-bodyH*t}
           W={W*0.94} H={5} D={D*0.62}
@@ -371,7 +622,7 @@ function HallawaySVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:Retur
 }
 
 // ─── КАБИНЕТ ─────────────────────────────────────────────────────────────────
-function OfficeSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+function OfficeSVG({ W, H, D, m, id, facade="matte", texture="smooth", filling={} }: SvgProps) {
   const ox = 14, oy = 168;
   const deskH = H*0.09; const legH = H*0.48; const cabW = W*0.36; const cabH = legH+deskH;
 
@@ -389,7 +640,13 @@ function OfficeSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnT
       <Box id={id} m={m} px={ox-2} py={oy-legH} W={W+4} H={deskH} D={D*0.85+2}
         faceOverride={m.grain?"#6b3e10":"#888"} topOverride={m.grain?"#8a5218":"#ccc"} sideOverride={m.grain?"#4a2a08":"#aaa"} />
 
+      {/* Фасад тумбы */}
+      <FacadeOverlay px={ox+1} py={oy-cabH+1} W={cabW-2} H={cabH-2} facade={facade} />
+      <TextureLayer  px={ox+1} py={oy-cabH+1} W={cabW-2} H={cabH-2} texture={texture} />
+      <FillingViz    px={ox+1} py={oy-cabH+1} W={cabW-2} H={cabH-2} filling={filling} />
+
       <Box id={id} m={m} px={ox+W*0.52} py={oy-legH-deskH} W={W*0.45} H={H*0.38} D={D*0.35} />
+      <FacadeOverlay px={ox+W*0.52+1} py={oy-legH-deskH-H*0.38+1} W={W*0.44} H={H*0.38-2} facade={facade} />
       <Box id={id} m={m} px={ox+W*0.52+1} py={oy-legH-deskH-H*0.38*0.45} W={W*0.44} H={4} D={D*0.33}
         faceOverride={m.t0} topOverride={m.t1} sideOverride={m.s1} />
 
@@ -406,7 +663,7 @@ function OfficeSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnT
 }
 
 // ─── ВАННАЯ ──────────────────────────────────────────────────────────────────
-function BathroomSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+function BathroomSVG({ W, H, D, m, id, facade="matte", texture="smooth", filling={} }: SvgProps) {
   const ox = 24, oy = 172;
   const cabH = H*0.52; const topH = 6;
 
@@ -416,6 +673,9 @@ function BathroomSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:Retur
       <ellipse cx={ox+W*0.5} cy={oy+4} rx={W*0.48} ry={6} fill={`url(#gSh${id})`} filter={`url(#blur${id})`} />
 
       <Box id={id} m={m} px={ox} py={oy} W={W} H={cabH} D={D} />
+      <FacadeOverlay px={ox+1} py={oy-cabH+1} W={W-2} H={cabH-2} facade={facade} />
+      <TextureLayer  px={ox+1} py={oy-cabH+1} W={W-2} H={cabH-2} texture={texture} />
+      <FillingViz    px={ox+1} py={oy-cabH+1} W={W-2} H={cabH-2} filling={filling} />
       {[0.25,0.7].map((t,i) => <Handle key={i} x={ox+W*t-8} y={oy-cabH*0.45} len={16} color={m.handle} />)}
 
       <Box id={id} m={m} px={ox-3} py={oy-cabH} W={W+6} H={topH} D={D+4}
@@ -444,7 +704,7 @@ function BathroomSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:Retur
 }
 
 // ─── ДЕТСКАЯ ─────────────────────────────────────────────────────────────────
-function ChildroomSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+function ChildroomSVG({ W, H, D, m, id, facade="matte", texture="smooth", filling={} }: SvgProps) {
   const ox = 14, oy = 172;
   const bedW = W*0.52; const deskW = W*0.38;
   const bedFrameH = H*0.17; const mattH = H*0.15; const headH = H*0.38; const legH = H*0.08;
@@ -460,11 +720,14 @@ function ChildroomSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:Retu
           faceOverride={m.s1} topOverride={m.s1} sideOverride={m.edge} />
       ))}
       <Box id={id} m={m} px={ox} py={oy-legH} W={bedW} H={bedFrameH} D={D} />
+      <FillingViz px={ox+1} py={oy-legH-bedFrameH+2} W={bedW-2} H={bedFrameH-4} filling={filling} />
       <Box id={id} m={m} px={ox+bedW*0.03} py={oy-legH-bedFrameH} W={bedW*0.94} H={mattH} D={D*0.94}
         faceOverride="#f5f0e8" topOverride="#fff" sideOverride="#ddd" />
       <Box id={id} m={m} px={ox+bedW*0.06} py={oy-legH-bedFrameH-mattH} W={bedW*0.38} H={mattH*0.55} D={D*0.28}
         faceOverride="#fff" topOverride="#f5f5f5" sideOverride="#ddd" />
       <Box id={id} m={m} px={ox} py={oy-legH-bedFrameH-mattH} W={bedW} H={headH} D={D*0.14} />
+      <FacadeOverlay px={ox+bedW*0.05} py={oy-legH-bedFrameH-mattH-headH*0.9} W={bedW*0.9} H={headH*0.85} facade={facade} />
+      <TextureLayer  px={ox+bedW*0.05} py={oy-legH-bedFrameH-mattH-headH*0.9} W={bedW*0.9} H={headH*0.85} texture={texture} />
 
       <Box id={id} m={m} px={ox+bedW+W*0.05} py={oy-deskLegH} W={deskW} H={deskH} D={D*0.58}
         faceOverride={m.t0} topOverride={m.t0} sideOverride={m.s1} />
@@ -518,7 +781,7 @@ function applyColor(base: ReturnType<typeof getM>, hex?: string): ReturnType<typ
   };
 }
 
-export default function FurniturePreview({ type, material, color, style, width, height, depth }: Props) {
+export default function FurniturePreview({ type, material, color, style, facade, texture, filling, width, height, depth }: Props) {
   const id = useMemo(() => `fp${_uid++}`, []);
   const mBase = useMemo(() => getM(material), [material]);
   const m = useMemo(() => applyColor(mBase, color), [mBase, color]);
@@ -540,7 +803,7 @@ export default function FurniturePreview({ type, material, color, style, width, 
     return Math.min(Math.max((depth / 65) * 32, 15), 44);
   }, [depth, type]);
 
-  const svgProps = { W, H, D, m, id };
+  const svgProps = { W, H, D, m, id, facade, texture, filling };
 
   if (!type) {
     return (

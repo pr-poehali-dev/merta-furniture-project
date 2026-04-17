@@ -206,3 +206,18 @@ input[type="range"]::-webkit-slider-thumb {
 .cart-open {
   animation: slideRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Page transition */
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.page-enter {
+  animation: pageFadeIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

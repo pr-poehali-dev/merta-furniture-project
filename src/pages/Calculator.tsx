@@ -211,7 +211,7 @@ export default function Calculator() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f9f9f7] font-body text-[#111]">
+    <div className="min-h-screen bg-[#f9f9f7] font-body text-[#111] page-enter">
 
       {/* ── NAVBAR ── */}
       <nav className={`fixed top-0 left-0 right-0 z-50 ${scrolled ? "navbar-scrolled" : "navbar-transparent bg-white border-b border-[#eee]"}`}>

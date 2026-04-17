@@ -1182,9 +1182,13 @@ export default function Index() {
 
       {/* ── CART ── */}
       {cartOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div className="flex-1 bg-black/50" onClick={() => setCartOpen(false)} />
-          <div className="w-full max-w-sm bg-white flex flex-col h-full">
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setCartOpen(false)} />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl flex flex-col max-h-[80dvh] sm:inset-y-0 sm:bottom-auto sm:left-auto sm:right-0 sm:w-96 sm:max-h-full sm:rounded-none">
+            {/* Handle — mobile only */}
+            <div className="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-8 h-1 bg-[#ddd] rounded-full" />
+            </div>
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#eee]">
               <div className="flex items-center gap-2">
@@ -1233,7 +1237,8 @@ export default function Index() {
 
             {/* Footer */}
             {cart.length > 0 && (
-              <div className="px-5 py-4 border-t border-[#eee]">
+              <div className="px-5 py-4 border-t border-[#eee] flex-shrink-0" style={{paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'}}>
+
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-[11px] tracking-widest uppercase text-[#999]">Итого</span>
                   <span className="font-display text-xl">{formatPrice(cartTotal)}</span>

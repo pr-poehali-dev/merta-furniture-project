@@ -165,9 +165,9 @@ function IsoDrawer({ bx, bz, wx, wy, wz, dw, dd, dh, m }: {
 }
 
 // Дверца с ручкой (открывается слева)
-function IsoDoor({ bx, bz, wx, wy, wz, dw, dd, dh, m, facade="matte", handleSide="right" }: {
+function IsoDoor({ bx, bz, wx, wy, wz, dw, dd, dh, m, facade="matte", handleSide="right", opacity=1 }: {
   bx:number; bz:number; wx:number; wy:number; wz:number; dw:number; dd:number; dh:number;
-  m:M; facade?:string; handleSide?:"left"|"right";
+  m:M; facade?:string; handleSide?:"left"|"right"; opacity?:number;
 }) {
   const p = (x:number,y:number,z:number) => iso(wx+x,wy+y,wz+z,bx,bz);
   const pt = ([x,y]:[number,number]) => `${x.toFixed(1)},${y.toFixed(1)}`;
@@ -193,7 +193,7 @@ function IsoDoor({ bx, bz, wx, wy, wz, dw, dd, dh, m, facade="matte", handleSide
   const hA = p(hx, -0.05, dh*0.42); const hB = p(hx, -0.05, dh*0.58);
 
   return (
-    <g>
+    <g opacity={opacity}>
       {/* Основная панель */}
       <polygon points={`${pt(A)} ${pt(B)} ${pt(F)} ${pt(E)}`}
         fill={faceC} stroke={m.edge} strokeWidth="0.5"/>
@@ -402,6 +402,10 @@ function KitchenModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
           {/* Корпус */}
           <IsoBox bx={bx} bz={bz} wx={sw*i+0.04} wy={0.04} wz={0} dw={sw-0.08} dd={D-0.08} dh={lh} m={m}
             faceC={darken(m.f0,3)} topC={m.t0} sideC={m.s0} />
+          {/* Полки внутри — рисуем ДО дверцы */}
+          {shelves > 0 && Array.from({length: Math.min(shelves, 3)}).map((_,si) => (
+            <IsoShelf key={si} bx={bx} bz={bz} wx={sw*i+0.08} wy={0.1} wz={lh*(0.28 + 0.32*si)} dw={sw-0.16} dd={D-0.16} m={m} />
+          ))}
           {/* Дверца */}
           {drawers > 0 ? (
             <>
@@ -411,11 +415,8 @@ function KitchenModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
               <IsoHandleH bx={bx} bz={bz} wx={sw*i+sw*0.2} wy={0.06} wz={lh*0.26} len={sw*0.6} m={m} />
             </>
           ) : (
-            <>
-              <IsoDoor bx={bx} bz={bz} wx={sw*i+0.06} wy={0} wz={0.04} dw={sw-0.12} dd={0.06} dh={lh-0.08} m={m} facade={facade} />
-              {/* Полка внутри */}
-              {shelves > 0 && <IsoShelf bx={bx} bz={bz} wx={sw*i+0.08} wy={0.1} wz={lh*0.52} dw={sw-0.16} dd={D-0.16} m={m} />}
-            </>
+            <IsoDoor bx={bx} bz={bz} wx={sw*i+0.06} wy={0} wz={0.04} dw={sw-0.12} dd={0.06} dh={lh-0.08} m={m}
+              facade={facade} opacity={shelves > 0 ? 0.5 : 1} />
           )}
         </g>
       ))}
@@ -505,23 +506,11 @@ function WardrobeModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
           fill={darken(m.f0,20)} stroke="none"/>;
       })()}
 
-      {/* Наполнение */}
-      {/* Штанги */}
-      {rails > 0 && <IsoRail bx={bx} bz={bz} wx={0.12} wy={D*0.5} wz={H*0.65} dw={W-0.24} m={m} />}
-      {rails > 1 && <IsoRail bx={bx} bz={bz} wx={0.12} wy={D*0.5} wz={H*0.72} dw={(W-0.24)/2} m={m} />}
-      {/* Полки */}
-      {shelves > 0 && Array.from({length:Math.min(shelves,5)}).map((_,i) => (
-        <IsoShelf key={i} bx={bx} bz={bz} wx={0.08} wy={0.06} wz={H*0.18+H*0.6*(i/(Math.min(shelves,5)+1))} dw={W/2-0.1} dd={D-0.12} m={m} />
-      ))}
-      {/* Ящики */}
-      {drawers > 0 && Array.from({length:Math.min(drawers,3)}).map((_,i) => (
-        <IsoDrawer key={i} bx={bx} bz={bz} wx={W/2+0.06} wy={0.02} wz={0.06+H*0.14*i} dw={W/2-0.12} dd={0.1} dh={H*0.12} m={m} />
-      ))}
-
-      {/* Раздвижные двери */}
+      {/* Раздвижные двери — с прозрачностью если есть наполнение */}
       {/* Дверь 1 — передняя (сдвинута влево) */}
       <IsoBox bx={bx} bz={bz} wx={0.03} wy={-0.04} wz={0.03} dw={W/2-0.02} dd={0.05} dh={H-0.06} m={m}
-        faceC={facade==="mirror" ? "#b8d8e8" : m.f0} topC={m.t0} sideC={m.s0} />
+        faceC={facade==="mirror" ? "#b8d8e8" : m.f0} topC={m.t0} sideC={m.s0}
+        opacity={shelves>0||rails>0||drawers>0 ? 0.45 : 1} />
       {facade === "mirror" && (() => {
         const a = iso(0.03,-0.04,0.03,bx,bz); const b = iso(W/2-0.02,-0.04,0.03,bx,bz);
         const c = iso(W/2-0.02,-0.04,H-0.06,bx,bz); const d = iso(0.03,-0.04,H-0.06,bx,bz);
@@ -541,12 +530,26 @@ function WardrobeModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
 
       {/* Дверь 2 — задняя (сдвинута вправо) */}
       <IsoBox bx={bx} bz={bz} wx={W/2+0.02} wy={-0.02} wz={0.03} dw={W/2-0.05} dd={0.05} dh={H-0.06} m={m}
-        faceC={facade==="mirror" ? darken("#b8d8e8",10) : darken(m.f0,8)} topC={m.t1} sideC={m.s1} />
+        faceC={facade==="mirror" ? darken("#b8d8e8",10) : darken(m.f0,8)} topC={m.t1} sideC={m.s1}
+        opacity={shelves>0||rails>0||drawers>0 ? 0.45 : 1} />
       {facade === "mirror" && (() => {
         const a = iso(W/2+0.02,-0.02,0.03,bx,bz); const b = iso(W-0.05,-0.02,0.03,bx,bz);
         const c = iso(W-0.05,-0.02,H-0.06,bx,bz); const d = iso(W/2+0.02,-0.02,H-0.06,bx,bz);
         return <polygon points={`${a[0]},${a[1]} ${b[0]},${b[1]} ${c[0]},${c[1]} ${d[0]},${d[1]}`} fill="rgba(190,225,245,0.3)"/>;
       })()}
+
+      {/* Наполнение — рисуется ПОВЕРХ дверей */}
+      {/* Штанги */}
+      {rails > 0 && <IsoRail bx={bx} bz={bz} wx={0.12} wy={D*0.5} wz={H*0.68} dw={W-0.24} m={m} />}
+      {rails > 1 && <IsoRail bx={bx} bz={bz} wx={0.12} wy={D*0.5} wz={H*0.42} dw={(W-0.24)*0.5} m={m} />}
+      {/* Полки — левая секция */}
+      {shelves > 0 && Array.from({length:Math.min(shelves,5)}).map((_,i) => (
+        <IsoShelf key={i} bx={bx} bz={bz} wx={0.08} wy={0.06} wz={H*0.12 + H*0.72*(i/(Math.min(shelves,5)+1))} dw={W*0.45} dd={D-0.12} m={m} />
+      ))}
+      {/* Ящики — правая секция */}
+      {drawers > 0 && Array.from({length:Math.min(drawers,3)}).map((_,i) => (
+        <IsoDrawer key={i} bx={bx} bz={bz} wx={W*0.52} wy={0.02} wz={0.08+H*0.15*i} dw={W*0.44} dd={0.1} dh={H*0.13} m={m} />
+      ))}
       {/* Рельсы */}
       {[0.005, H-0.02].map((z,i) => (
         <IsoBox key={i} bx={bx} bz={bz} wx={0} wy={-0.05} wz={z} dw={W} dd={0.05} dh={0.025} m={m}
@@ -735,16 +738,18 @@ function HallwayModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
       {/* Корпус верхний */}
       <IsoBox bx={bx} bz={bz} wx={0} wy={0} wz={shoeH} dw={W} dd={D*0.7} dh={bodyH} m={m} />
 
-      {/* Внутренние полки */}
+      {/* Внутренние полки — ДО дверцы */}
       {shelves > 0 && Array.from({length:Math.min(shelves,4)}).map((_,i) => (
         <IsoShelf key={i} bx={bx} bz={bz} wx={0.06} wy={0.06} wz={shoeH+bodyH*(0.2+0.55*(i/(Math.min(shelves,4)+1)))} dw={W-0.12} dd={D*0.64} m={m} />
       ))}
 
-      {/* Дверцы корпуса */}
+      {/* Дверцы корпуса — полупрозрачные если есть наполнение */}
       {W > 0.8 ? [0, W/2].map((ox,i) => (
-        <IsoDoor key={i} bx={bx} bz={bz} wx={ox+0.04} wy={0} wz={shoeH+0.04} dw={W/2-0.08} dd={0.06} dh={bodyH-0.08} m={m} facade={facade} handleSide={i===0?"right":"left"} />
+        <IsoDoor key={i} bx={bx} bz={bz} wx={ox+0.04} wy={0} wz={shoeH+0.04} dw={W/2-0.08} dd={0.06} dh={bodyH-0.08} m={m} facade={facade} handleSide={i===0?"right":"left"}
+          opacity={shelves>0||hooks>0||drawers>0 ? 0.45 : 1} />
       )) : (
-        <IsoDoor bx={bx} bz={bz} wx={0.04} wy={0} wz={shoeH+0.04} dw={W-0.08} dd={0.06} dh={bodyH-0.08} m={m} facade={facade} />
+        <IsoDoor bx={bx} bz={bz} wx={0.04} wy={0} wz={shoeH+0.04} dw={W-0.08} dd={0.06} dh={bodyH-0.08} m={m} facade={facade}
+          opacity={shelves>0||hooks>0||drawers>0 ? 0.45 : 1} />
       )}
 
       {/* Зеркало */}
@@ -819,13 +824,13 @@ function OfficeModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
       <IsoBox bx={bx} bz={bz} wx={-0.04} wy={-0.03} wz={legH} dw={W+0.08} dd={D+0.06} dh={deskH} m={m}
         faceC={darken(m.f0,5)} topC={m.grain?"#9a6828":"#909090"} sideC={darken(m.s0,8)} />
 
-      {/* Надстройка */}
+      {/* Надстройка — полки ПЕРЕД дверью, дверь полупрозрачная */}
       {shelves > 0 && <>
         <IsoBox bx={bx} bz={bz} wx={W*0.5} wy={0.06} wz={legH+deskH} dw={W*0.48} dd={D*0.45} dh={H*0.42} m={m} />
         {Array.from({length:Math.min(shelves,3)}).map((_,i) => (
           <IsoShelf key={i} bx={bx} bz={bz} wx={W*0.52} wy={0.1} wz={legH+deskH+H*0.42*(0.25+0.45*(i/(Math.min(shelves,3)+1)))} dw={W*0.44} dd={D*0.38} m={m} />
         ))}
-        <IsoDoor bx={bx} bz={bz} wx={W*0.52} wy={0.06} wz={legH+deskH+0.04} dw={W*0.46} dd={0.06} dh={H*0.42-0.08} m={m} facade={facade} />
+        <IsoDoor bx={bx} bz={bz} wx={W*0.52} wy={0.06} wz={legH+deskH+0.04} dw={W*0.46} dd={0.06} dh={H*0.42-0.08} m={m} facade={facade} opacity={0.45} />
       </>}
 
       {/* Монитор */}
@@ -865,10 +870,17 @@ function BathroomModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
 
       {/* Тумба */}
       <IsoBox bx={bx} bz={bz} wx={0} wy={0} wz={0} dw={W} dd={D} dh={cabH} m={m} />
+      {/* Полки внутри — ДО дверцы */}
+      {shelves > 0 && Array.from({length:Math.min(shelves,3)}).map((_,i) => (
+        <IsoShelf key={i} bx={bx} bz={bz} wx={0.06} wy={0.06} wz={cabH*(0.25+0.28*i)} dw={W-0.12} dd={D-0.12} m={m} />
+      ))}
+      {/* Дверцы — полупрозрачные если есть наполнение */}
       {W > 0.8 ? [0, W/2].map((ox,i) => (
-        <IsoDoor key={i} bx={bx} bz={bz} wx={ox+0.05} wy={0} wz={0.05} dw={W/2-0.1} dd={0.06} dh={cabH-0.1} m={m} facade={facade} handleSide={i===0?"right":"left"} />
+        <IsoDoor key={i} bx={bx} bz={bz} wx={ox+0.05} wy={0} wz={0.05} dw={W/2-0.1} dd={0.06} dh={cabH-0.1} m={m} facade={facade} handleSide={i===0?"right":"left"}
+          opacity={shelves>0 ? 0.45 : 1} />
       )) : (
-        <IsoDoor bx={bx} bz={bz} wx={0.05} wy={0} wz={0.05} dw={W-0.1} dd={0.06} dh={cabH-0.1} m={m} facade={facade} />
+        <IsoDoor bx={bx} bz={bz} wx={0.05} wy={0} wz={0.05} dw={W-0.1} dd={0.06} dh={cabH-0.1} m={m} facade={facade}
+          opacity={shelves>0 ? 0.45 : 1} />
       )}
 
       {/* Столешница */}

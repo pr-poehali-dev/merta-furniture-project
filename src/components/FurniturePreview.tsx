@@ -303,10 +303,19 @@ function IsoHandleH({ bx, bz, wx, wy, wz, len, m }: {
   );
 }
 
-// Тень на полу
+// Реалистичная многослойная тень на полу
 function Shadow({ bx, bz, cx, cz, rx, rz }: { bx:number; bz:number; cx:number; cz:number; rx:number; rz:number }) {
   const p = iso(cx, 0, 0, bx, bz);
-  return <ellipse cx={p[0]} cy={cz} rx={rx} ry={rz} fill="rgba(0,0,0,0.18)" filter="url(#sh)"/>;
+  return (
+    <g>
+      {/* Внешний размытый ореол */}
+      <ellipse cx={p[0]} cy={cz} rx={rx*1.15} ry={rz*1.4} fill="rgba(0,0,0,0.08)" filter="url(#sh)"/>
+      {/* Основная тень */}
+      <ellipse cx={p[0]} cy={cz} rx={rx} ry={rz} fill="rgba(0,0,0,0.22)" filter="url(#sh)"/>
+      {/* Плотная центральная */}
+      <ellipse cx={p[0]} cy={cz} rx={rx*0.6} ry={rz*0.55} fill="rgba(0,0,0,0.14)"/>
+    </g>
+  );
 }
 
 // ─── EXTRAS-КОМПОНЕНТЫ ────────────────────────────────────────────────────────

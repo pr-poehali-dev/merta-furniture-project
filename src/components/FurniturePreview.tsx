@@ -8,6 +8,7 @@ interface Props {
   facade?: string;
   texture?: string;
   filling?: Record<string, number>;
+  extras?: string[];
   width: number;
   height: number;
   depth: number;
@@ -245,6 +246,115 @@ function Shadow({ bx, bz, cx, cz, rx, rz }: { bx:number; bz:number; cx:number; c
   return <ellipse cx={p[0]} cy={cz} rx={rx} ry={rz} fill="rgba(0,0,0,0.18)" filter="url(#sh)"/>;
 }
 
+// ─── EXTRAS-КОМПОНЕНТЫ ────────────────────────────────────────────────────────
+
+// LED-подсветка: полоса вдоль нижней кромки или под шкафами
+function LedStrip({ bx, bz, wx, wy, wz, dw, color="#ffe8a0" }: {
+  bx:number; bz:number; wx:number; wy:number; wz:number; dw:number; color?:string;
+}) {
+  const A = iso(wx, wy, wz, bx, bz);
+  const B = iso(wx+dw, wy, wz, bx, bz);
+  return (
+    <g>
+      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke={color} strokeWidth="2.5" strokeLinecap="round" opacity="0.85"/>
+      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.5"/>
+      {/* Ореол */}
+      <line x1={A[0]} y1={A[1]+3} x2={B[0]} y2={B[1]+3} stroke={color} strokeWidth="5" strokeLinecap="round" opacity="0.15"/>
+    </g>
+  );
+}
+
+// Зеркало на стену (прямоугольник с рамкой и бликом)
+function WallMirror({ bx, bz, wx, wy, wz, dw, dh }: {
+  bx:number; bz:number; wx:number; wy:number; wz:number; dw:number; dh:number;
+}) {
+  const p = (x:number,y:number,z:number) => iso(wx+x,wy+y,wz+z,bx,bz);
+  const pt = ([x,y]:[number,number]) => `${x.toFixed(1)},${y.toFixed(1)}`;
+  const A = p(0,0,0); const B = p(dw,0,0); const C = p(dw,0,dh); const D = p(0,0,dh);
+  const b1 = p(dw*0.08,0,dh*0.06); const b2 = p(dw*0.28,0,dh*0.06); const b3 = p(dw*0.22,0,dh*0.85); const b4 = p(dw*0.06,0,dh*0.85);
+  return (
+    <g>
+      <polygon points={`${pt(A)} ${pt(B)} ${pt(C)} ${pt(D)}`} fill="rgba(185,222,242,0.5)" stroke="#a0c8de" strokeWidth="1.5"/>
+      <polygon points={`${pt(b1)} ${pt(b2)} ${pt(b3)} ${pt(b4)}`} fill="rgba(255,255,255,0.22)"/>
+    </g>
+  );
+}
+
+// Кухонный остров
+function KitchenIsland({ bx, bz, wx, wy, wz, dw, dd, dh, m }: {
+  bx:number; bz:number; wx:number; wy:number; wz:number; dw:number; dd:number; dh:number; m:M;
+}) {
+  return (
+    <g>
+      <IsoBox bx={bx} bz={bz} wx={wx} wy={wy} wz={wz} dw={dw} dd={dd} dh={dh} m={m}
+        faceC={darken(m.f0,8)} topC={m.t0} sideC={m.s0} />
+      {/* Столешница острова */}
+      <IsoBox bx={bx} bz={bz} wx={wx-0.03} wy={wy-0.02} wz={wz+dh} dw={dw+0.06} dd={dd+0.04} dh={0.05} m={m}
+        faceC="#606060" topC="#888" sideC="#505050" />
+    </g>
+  );
+}
+
+// Механизм раскладки дивана (выдвинутая секция)
+function SofaBed({ bx, bz, wx, wy, wz, dw, dd, m }: {
+  bx:number; bz:number; wx:number; wy:number; wz:number; dw:number; dd:number; m:M;
+}) {
+  return (
+    <g>
+      {/* Выдвинутая секция */}
+      <IsoBox bx={bx} bz={bz} wx={wx} wy={wy-dd*0.6} wz={wz} dw={dw} dd={dd*0.6} dh={0.04} m={m}
+        faceC="#ede9e0" topC="#f5f2ea" sideC="#d0ccc0" />
+      {/* Ножки механизма */}
+      {[wx+dw*0.15, wx+dw*0.85].map((x,i) => {
+        const la = iso(x, wy-dd*0.58, wz, bx, bz);
+        const lb = iso(x, wy-dd*0.58, wz-0.2, bx, bz);
+        return <line key={i} x1={la[0]} y1={la[1]} x2={lb[0]} y2={lb[1]} stroke="#888" strokeWidth="1.5"/>;
+      })}
+    </g>
+  );
+}
+
+// Зеркало-шкаф в ванной (уже есть в модели, но можно усилить)
+function MirrorCabinet({ bx, bz, wx, wy, wz, dw, dh }: {
+  bx:number; bz:number; wx:number; wy:number; wz:number; dw:number; dh:number;
+}) {
+  const p = (x:number,y:number,z:number) => iso(wx+x,wy+y,wz+z,bx,bz);
+  const pt = ([x,y]:[number,number]) => `${x.toFixed(1)},${y.toFixed(1)}`;
+  const A = p(0,0,0); const B = p(dw,0,0); const C = p(dw,0,dh); const D = p(0,0,dh);
+  return (
+    <g>
+      <polygon points={`${pt(A)} ${pt(B)} ${pt(C)} ${pt(D)}`} fill="rgba(188,222,242,0.55)" stroke="#90b8d4" strokeWidth="1.8"/>
+      <polygon points={`${pt(A)} ${pt(p(dw*0.2,0,0))} ${pt(p(dw*0.16,0,dh))} ${pt(D)}`} fill="rgba(255,255,255,0.25)"/>
+      {/* Ручка */}
+      {(() => { const h1=p(dw*0.5,0,dh*0.42); const h2=p(dw*0.5,0,dh*0.58);
+        return <line x1={h1[0]} y1={h1[1]} x2={h2[0]} y2={h2[1]} stroke="#a0b0c0" strokeWidth="2" strokeLinecap="round"/>;
+      })()}
+    </g>
+  );
+}
+
+// Книжный шкаф (надставка)
+function Bookcase({ bx, bz, wx, wy, wz, dw, dd, dh, m }: {
+  bx:number; bz:number; wx:number; wy:number; wz:number; dw:number; dd:number; dh:number; m:M;
+}) {
+  return (
+    <g>
+      <IsoBox bx={bx} bz={bz} wx={wx} wy={wy} wz={wz} dw={dw} dd={dd} dh={dh} m={m} />
+      {/* Полки */}
+      {[0.3, 0.55, 0.8].map((t,i) => (
+        <IsoShelf key={i} bx={bx} bz={bz} wx={wx+0.04} wy={wy+0.04} wz={wz+dh*t} dw={dw-0.08} dd={dd-0.08} m={m} />
+      ))}
+      {/* Стёкла дверец */}
+      {[0,dw/2].map((ox,i) => {
+        const p2 = (x:number,y:number,z:number) => iso(wx+ox+x,wy+y,wz+z,bx,bz);
+        const pt2 = ([x,y]:[number,number]) => `${x.toFixed(1)},${y.toFixed(1)}`;
+        const A2=p2(0.04,0,0.04); const B2=p2(dw/2-0.04,0,0.04); const C2=p2(dw/2-0.04,0,dh-0.04); const D2=p2(0.04,0,dh-0.04);
+        return <polygon key={i} points={`${pt2(A2)} ${pt2(B2)} ${pt2(C2)} ${pt2(D2)}`} fill="rgba(180,215,235,0.3)" stroke="rgba(150,190,210,0.5)" strokeWidth="0.5"/>;
+      })}
+    </g>
+  );
+}
+
 // ─── SVG-КОНТЕЙНЕР С DEFS ─────────────────────────────────────────────────────
 function Scene({ w, h, children, m }: { w:number; h:number; children:React.ReactNode; m:M }) {
   const id = useMemo(()=>`s${Math.random().toString(36).slice(2,7)}`,[]);
@@ -261,8 +371,10 @@ function Scene({ w, h, children, m }: { w:number; h:number; children:React.React
   );
 }
 
+type ModelProps = { W:number; H:number; D:number; m:M; facade:string; filling:Record<string,number>; extras:string[] };
+
 // ─── КУХНЯ ───────────────────────────────────────────────────────────────────
-function KitchenModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:number; m:M; facade:string; filling:Record<string,number> }) {
+function KitchenModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
   const bx = 140, bz = 190;
 
   // Нижние шкафы: высота 0.45H, глубина D
@@ -346,12 +458,22 @@ function KitchenModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:n
         return <polygon points={`${f1[0]},${f1[1]} ${f2[0]},${f2[1]} ${f3[0]},${f3[1]} ${f4[0]},${f4[1]}`}
           fill="rgba(200,210,220,0.65)" stroke="rgba(160,170,180,0.4)" strokeWidth="0.4"/>;
       })()}
+
+      {/* EXTRAS */}
+      {/* LED-подсветка под верхними шкафами */}
+      {extras.includes("led") && (
+        <LedStrip bx={bx} bz={bz} wx={0} wy={0.1} wz={lh+th+gap} dw={W} />
+      )}
+      {/* Кухонный остров — блок сзади */}
+      {extras.includes("island") && (
+        <KitchenIsland bx={bx} bz={bz} wx={W*0.1} wy={D+0.4} wz={0} dw={W*0.8} dd={D*0.7} dh={lh} m={m} />
+      )}
     </Scene>
   );
 }
 
 // ─── ШКАФ-КУПЕ ───────────────────────────────────────────────────────────────
-function WardrobeModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:number; m:M; facade:string; filling:Record<string,number> }) {
+function WardrobeModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
   const bx = 130, bz = 200;
 
   const shelves = filling["shelf"] ?? 0;
@@ -434,12 +556,22 @@ function WardrobeModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:
       {/* Плинтус */}
       <IsoBox bx={bx} bz={bz} wx={0} wy={0} wz={-0.04} dw={W} dd={D} dh={0.04} m={m}
         faceC={darken(m.f0,20)} topC={m.t1} sideC={darken(m.s0,20)} />
+
+      {/* EXTRAS */}
+      {/* Подсветка — LED лента вдоль пола */}
+      {extras.includes("light") && (
+        <LedStrip bx={bx} bz={bz} wx={0.05} wy={-0.03} wz={0.01} dw={W-0.1} />
+      )}
+      {/* Зеркало внутри — на задней стенке левой секции */}
+      {extras.includes("mirror") && (
+        <WallMirror bx={bx} bz={bz} wx={W*0.05} wy={D-0.01} wz={H*0.1} dw={W*0.42} dh={H*0.75} />
+      )}
     </Scene>
   );
 }
 
 // ─── ДИВАН ───────────────────────────────────────────────────────────────────
-function SofaModel({ W, H, D, m, facade }: { W:number; H:number; D:number; m:M; facade:string }) {
+function SofaModel({ W, H, D, m, facade, extras }: ModelProps) {
   const bx = 140, bz = 195;
 
   const legH = H*0.14; const seatH = H*0.35; const backH = H*0.48; const backD = D*0.22;
@@ -499,12 +631,18 @@ function SofaModel({ W, H, D, m, facade }: { W:number; H:number; D:number; m:M; 
         <IsoBox key={i} bx={bx} bz={bz} wx={wx} wy={D-backD*1.1} wz={legH+seatH+seatH*0.05} dw={(W-2*armW)*0.38} dd={backD*1.1} dh={backH*0.52} m={m}
           faceC={lighten(upC,8)} topC={lighten(upC,12)} sideC={upC} />
       ))}
+
+      {/* EXTRAS */}
+      {/* Механизм раскладки — выдвинутая кроватная секция */}
+      {extras.includes("mechanism") && (
+        <SofaBed bx={bx} bz={bz} wx={armW} wy={0} wz={legH} dw={W-2*armW} dd={D} m={m} />
+      )}
     </Scene>
   );
 }
 
 // ─── СПАЛЬНЯ ─────────────────────────────────────────────────────────────────
-function BedroomModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:number; m:M; facade:string; filling:Record<string,number> }) {
+function BedroomModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
   const bx = 130, bz = 195;
 
   const legH = H*0.06; const frameH = H*0.18; const mattH = H*0.2; const headH = H*0.55;
@@ -560,12 +698,22 @@ function BedroomModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:n
           <IsoDrawer bx={bx} bz={bz} wx={wx+0.04} wy={D*0.3} wz={legH+(frameH+mattH)*0.55} dw={0.42} dd={0.08} dh={(frameH+mattH)*0.42} m={m} />
         </g>
       ))}
+
+      {/* EXTRAS */}
+      {/* Подсветка изголовья */}
+      {extras.includes("light") && (
+        <LedStrip bx={bx} bz={bz} wx={W*0.04} wy={D-0.04} wz={legH+headH} dw={W*0.92} color="#ffd080" />
+      )}
+      {/* Зеркало — на стене слева от кровати */}
+      {extras.includes("mirror") && (
+        <WallMirror bx={bx} bz={bz} wx={-0.85} wy={D*0.1} wz={legH} dw={0.7} dh={H*0.6} />
+      )}
     </Scene>
   );
 }
 
 // ─── ПРИХОЖАЯ ────────────────────────────────────────────────────────────────
-function HallwayModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:number; m:M; facade:string; filling:Record<string,number> }) {
+function HallwayModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
   const bx = 130, bz = 195;
   const shoeH = H*0.28; const bodyH = H*0.58; const shelfH = 0.04;
   const hooks  = filling["hook"]  ?? 0;
@@ -630,12 +778,22 @@ function HallwayModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:n
       {/* Крышка */}
       <IsoBox bx={bx} bz={bz} wx={-0.02} wy={-0.01} wz={shoeH+bodyH} dw={W+0.04} dd={D*0.72} dh={0.03} m={m}
         faceC={m.f1} topC={m.t0} sideC={m.s1} />
+
+      {/* EXTRAS */}
+      {/* Подсветка — LED под верхним корпусом */}
+      {extras.includes("light") && (
+        <LedStrip bx={bx} bz={bz} wx={0.04} wy={-0.02} wz={shoeH} dw={W-0.08} />
+      )}
+      {/* Зеркало — уже есть зеркальный блок в модели, усиливаем рамкой */}
+      {extras.includes("mirror") && (
+        <WallMirror bx={bx} bz={bz} wx={W*0.08} wy={0.08} wz={shoeH+bodyH+0.04} dw={W*0.84} dh={H*0.16} />
+      )}
     </Scene>
   );
 }
 
 // ─── КАБИНЕТ ─────────────────────────────────────────────────────────────────
-function OfficeModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:number; m:M; facade:string; filling:Record<string,number> }) {
+function OfficeModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
   const bx = 130, bz = 190;
   const deskH = H * 0.12; const legH = H*0.58; const cabW = W*0.38;
   const shelves = filling["shelf"] ?? 0;
@@ -681,12 +839,22 @@ function OfficeModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:nu
       {/* Клавиатура */}
       <IsoBox bx={bx} bz={bz} wx={W*0.1} wy={D*0.12} wz={legH+deskH} dw={W*0.3} dd={D*0.28} dh={0.02} m={m}
         faceC="#c8c8c8" topC="#d8d8d8" sideC="#a8a8a8" />
+
+      {/* EXTRAS */}
+      {/* Подсветка рабочего места — LED под надстройкой */}
+      {extras.includes("light") && (
+        <LedStrip bx={bx} bz={bz} wx={W*0.1} wy={D*0.44} wz={legH+deskH} dw={W*0.38} color="#e0f0ff" />
+      )}
+      {/* Книжный шкаф — дополнительная секция справа */}
+      {extras.includes("bookcase") && (
+        <Bookcase bx={bx} bz={bz} wx={W+0.08} wy={0.06} wz={0} dw={W*0.55} dd={D*0.5} dh={H*0.85} m={m} />
+      )}
     </Scene>
   );
 }
 
 // ─── ВАННАЯ ──────────────────────────────────────────────────────────────────
-function BathroomModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:number; m:M; facade:string; filling:Record<string,number> }) {
+function BathroomModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
   const bx = 130, bz = 185;
   const cabH = H*0.6; const topH = 0.05;
   const shelves = filling["shelf"] ?? 0;
@@ -746,12 +914,22 @@ function BathroomModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:
             stroke="rgba(140,180,200,0.5)" strokeWidth="1"/>}
         </>;
       })()}
+
+      {/* EXTRAS */}
+      {/* Зеркало-шкаф — уже в модели; подсветка тумбы снизу */}
+      {extras.includes("light") && (
+        <LedStrip bx={bx} bz={bz} wx={0.02} wy={-0.02} wz={-0.01} dw={W-0.04} color="#e8f4ff" />
+      )}
+      {/* Отдельное зеркало-шкаф поверх основного (усиленное) */}
+      {extras.includes("mirror") && (
+        <MirrorCabinet bx={bx} bz={bz} wx={W*0.06} wy={0.07} wz={cabH+topH+0.06} dw={W*0.88} dh={H*0.42} />
+      )}
     </Scene>
   );
 }
 
 // ─── ДЕТСКАЯ ─────────────────────────────────────────────────────────────────
-function ChildroomModel({ W, H, D, m, facade, filling }: { W:number; H:number; D:number; m:M; facade:string; filling:Record<string,number> }) {
+function ChildroomModel({ W, H, D, m, facade, filling, extras }: ModelProps) {
   const bx = 130, bz = 195;
   const bedW = W*0.55; const deskW = W*0.38;
   const bedFrameH = H*0.16; const mattH = H*0.18; const headH = H*0.42; const legH = H*0.07;
@@ -797,6 +975,25 @@ function ChildroomModel({ W, H, D, m, facade, filling }: { W:number; H:number; D
             sideC={["#7b241c","#1a5276","#196f3d","#5b2c6f","#9a7d0a"][i]} />
         ))}
       </>}
+
+      {/* EXTRAS */}
+      {/* Ночник — маленький светильник на столе */}
+      {extras.includes("light") && (() => {
+        const base = iso(bedW+W*0.06+deskW*0.88, D*0.5, deskLegH+deskH, bx, bz);
+        const top2  = iso(bedW+W*0.06+deskW*0.88, D*0.5, deskLegH+deskH+H*0.2, bx, bz);
+        return (
+          <g>
+            <line x1={base[0]} y1={base[1]} x2={top2[0]} y2={top2[1]} stroke="#a0a0a0" strokeWidth="1.5"/>
+            <ellipse cx={top2[0]} cy={top2[1]} rx={8} ry={4} fill="#ffe8a0" opacity="0.85"/>
+            <ellipse cx={top2[0]} cy={top2[1]+4} rx={10} ry={3} fill="#ffe8a0" opacity="0.2"/>
+          </g>
+        );
+      })()}
+      {/* Магнитная доска — на стене над кроватью */}
+      {extras.includes("board") && (
+        <IsoBox bx={bx} bz={bz} wx={bedW*0.08} wy={D*0.92} wz={legH+headH*0.9} dw={bedW*0.84} dd={0.04} dh={H*0.22} m={m}
+          faceC="#2c3e50" topC="#1a252f" sideC="#1a252f" />
+      )}
     </Scene>
   );
 }
@@ -805,7 +1002,7 @@ function ChildroomModel({ W, H, D, m, facade, filling }: { W:number; H:number; D
 let _uid = 0;
 const MAT_NAMES: Record<string,string> = { ldsp:"ЛДСП", mdf:"МДФ", massiv:"Массив дерева", mdf_kraska:"МДФ + эмаль" };
 
-export default function FurniturePreview({ type, material, color, style: _style, facade="matte", texture: _texture, filling={}, width, height, depth }: Props) {
+export default function FurniturePreview({ type, material, color, style: _style, facade="matte", texture: _texture, filling={}, extras=[], width, height, depth }: Props) {
   const id = useMemo(() => `fp${_uid++}`, []);
   void id;
 
@@ -832,7 +1029,7 @@ export default function FurniturePreview({ type, material, color, style: _style,
     return Math.min(Math.max((depth  / 65)  * 1.0, 0.5), 1.4);
   }, [depth, type]);
 
-  const props = { W, H, D, m, facade, filling };
+  const props = { W, H, D, m, facade, filling, extras };
 
   if (!type) {
     return (

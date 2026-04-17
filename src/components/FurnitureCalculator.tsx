@@ -243,6 +243,7 @@ export default function FurnitureCalculator() {
                 facade={s.facade}
                 texture={s.texture}
                 filling={s.filling}
+                extras={s.extras}
                 width={s.width} height={s.height} depth={s.depth}
               />
             </div>
@@ -556,6 +557,7 @@ export default function FurnitureCalculator() {
             facade={s.facade}
             texture={s.texture}
             filling={s.filling}
+            extras={s.extras}
             width={s.width} height={s.height} depth={s.depth}
           />
         </div>

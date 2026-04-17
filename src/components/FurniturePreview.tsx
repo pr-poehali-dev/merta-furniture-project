@@ -9,330 +9,360 @@ interface Props {
   depth: number;
 }
 
-// Реальные цвета материалов — отчётливо разные
-const MATERIAL_COLORS: Record<string, { face: string; top: string; side: string; handle: string; gloss: boolean }> = {
-  ldsp:       { face: "#dfd3b8", top: "#c8b99a", side: "#b5a07f", handle: "#7a6a55", gloss: false },
-  mdf:        { face: "#c8c8c8", top: "#adadad", side: "#929292", handle: "#555555", gloss: false },
-  massiv:     { face: "#b87333", top: "#8f5320", side: "#6e3d13", handle: "#3d2008", gloss: false },
-  mdf_kraska: { face: "#f5f5f5", top: "#e0e0e0", side: "#c5c5c5", handle: "#888888", gloss: true  },
-  default:    { face: "#d9cec0", top: "#bfb09e", side: "#a89880", handle: "#6b5c47", gloss: false },
+// ─── ПАЛИТРЫ МАТЕРИАЛОВ ───────────────────────────────────────────────────────
+const MAT: Record<string, {
+  f0: string; f1: string;
+  t0: string; t1: string;
+  s0: string; s1: string;
+  edge: string;
+  grain: boolean;
+  gloss: boolean;
+  handle: string;
+}> = {
+  ldsp: {
+    f0:"#ede0cb", f1:"#c8b593",
+    t0:"#d4c4a8", t1:"#b89e78",
+    s0:"#bfaa88", s1:"#9e8660",
+    edge:"#8a7255", grain:false, gloss:false,
+    handle:"#6b5840",
+  },
+  mdf: {
+    f0:"#d2cdc8", f1:"#a8a39e",
+    t0:"#bcb8b2", t1:"#929089",
+    s0:"#a09d98", s1:"#7e7c78",
+    edge:"#6a6864", grain:false, gloss:false,
+    handle:"#444",
+  },
+  massiv: {
+    f0:"#c07d3a", f1:"#7a4a18",
+    t0:"#a86828", t1:"#6b3e10",
+    s0:"#8a5218", s1:"#562e08",
+    edge:"#3d2008", grain:true, gloss:false,
+    handle:"#2a1404",
+  },
+  mdf_kraska: {
+    f0:"#f8f8f8", f1:"#d8d8d8",
+    t0:"#e8e8e8", t1:"#c8c8c8",
+    s0:"#d0d0d0", s1:"#b0b0b0",
+    edge:"#aaa", grain:false, gloss:true,
+    handle:"#777",
+  },
+  default: {
+    f0:"#ddd3bc", f1:"#b8a882",
+    t0:"#c8bb9e", t1:"#a49070",
+    s0:"#b0a080", s1:"#8c7858",
+    edge:"#7a6644", grain:false, gloss:false,
+    handle:"#5c4c30",
+  },
 };
+function getM(mat: string) { return MAT[mat] ?? MAT.default; }
 
-function getC(material: string) {
-  return MATERIAL_COLORS[material] ?? MATERIAL_COLORS.default;
+// ─── SVG DEFS ─────────────────────────────────────────────────────────────────
+function Defs({ id, m }: { id: string; m: ReturnType<typeof getM> }) {
+  return (
+    <defs>
+      <linearGradient id={`gF${id}`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stopColor={m.f0} />
+        <stop offset="100%" stopColor={m.f1} />
+      </linearGradient>
+      <linearGradient id={`gT${id}`} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%"   stopColor={m.t0} />
+        <stop offset="100%" stopColor={m.t1} />
+      </linearGradient>
+      <linearGradient id={`gS${id}`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stopColor={m.s0} />
+        <stop offset="100%" stopColor={m.s1} />
+      </linearGradient>
+      {m.gloss && (
+        <linearGradient id={`gG${id}`} x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0%"   stopColor="white" stopOpacity="0.28" />
+          <stop offset="55%"  stopColor="white" stopOpacity="0.06" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </linearGradient>
+      )}
+      <radialGradient id={`gSh${id}`} cx="50%" cy="50%" r="50%">
+        <stop offset="0%"   stopColor="rgba(0,0,0,0.32)" />
+        <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+      </radialGradient>
+      <filter id={`blur${id}`} x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="2" />
+      </filter>
+    </defs>
+  );
 }
 
-// Изометрические константы (30° проекция)
-const ISO_X = 0.866; // cos(30°)
-const ISO_Y = 0.5;   // sin(30°)
-
-// Строит изометрический прямоугольный параллелепипед
-// ox, oy — левый нижний угол фронтальной грани
-// W — ширина (по X), H — высота (по Y), D — глубина (уходит вправо-вверх)
-function IsoBox({
-  ox, oy, W, H, D,
-  face, top, side,
-  stroke = "#00000033",
-  sw = 0.8,
-  opacity = 1,
+// ─── ИЗО-ПАРАЛЛЕЛЕПИПЕД ───────────────────────────────────────────────────────
+function Box({
+  id, px, py, W, H, D, m,
+  faceOverride, topOverride, sideOverride,
+  opacity = 1, noTop = false, noSide = false,
 }: {
-  ox: number; oy: number; W: number; H: number; D: number;
-  face: string; top: string; side: string;
-  stroke?: string; sw?: number; opacity?: number;
+  id: string; px: number; py: number; W: number; H: number; D: number;
+  m: ReturnType<typeof getM>;
+  faceOverride?: string; topOverride?: string; sideOverride?: string;
+  opacity?: number; noTop?: boolean; noSide?: boolean;
 }) {
-  const dx = D * ISO_X;
-  const dy = D * ISO_Y;
+  const cx = D * 0.866;
+  const cy = D * 0.5;
+  const A  = `${px},${py}`;
+  const B  = `${px+W},${py}`;
+  const C  = `${px+W},${py-H}`;
+  const Dv = `${px},${py-H}`;
+  const F  = `${px+W+cx},${py-cy}`;
+  const G  = `${px+W+cx},${py-H-cy}`;
+  const Hv = `${px+cx},${py-H-cy}`;
 
-  // 8 вершин
-  const A = [ox,     oy];          // фронт нижний левый
-  const B = [ox + W, oy];          // фронт нижний правый
-  const C = [ox + W, oy - H];      // фронт верхний правый
-  const Dv= [ox,     oy - H];      // фронт верхний левый
-  const E = [ox + dx,     oy - dy];           // зад нижний левый
-  const F = [ox + W + dx, oy - dy];           // зад нижний правый
-  const G = [ox + W + dx, oy - H - dy];       // зад верхний правый
-  const Hv= [ox + dx,     oy - H - dy];       // зад верхний левый
-
-  const pt = (v: number[]) => `${v[0]},${v[1]}`;
+  const fFill = faceOverride ?? `url(#gF${id})`;
+  const tFill = topOverride  ?? `url(#gT${id})`;
+  const sFill = sideOverride ?? `url(#gS${id})`;
 
   return (
     <g opacity={opacity}>
-      {/* Фронтальная грань */}
-      <polygon points={`${pt(A)} ${pt(B)} ${pt(C)} ${pt(Dv)}`} fill={face} stroke={stroke} strokeWidth={sw} />
-      {/* Верхняя грань */}
-      <polygon points={`${pt(Dv)} ${pt(C)} ${pt(G)} ${pt(Hv)}`} fill={top} stroke={stroke} strokeWidth={sw} />
-      {/* Правая боковая грань */}
-      <polygon points={`${pt(B)} ${pt(F)} ${pt(G)} ${pt(C)}`} fill={side} stroke={stroke} strokeWidth={sw} />
+      <polygon points={`${A} ${B} ${C} ${Dv}`} fill={fFill} stroke={m.edge} strokeWidth="0.6" />
+      {!noTop && <polygon points={`${Dv} ${C} ${G} ${Hv}`} fill={tFill} stroke={m.edge} strokeWidth="0.6" />}
+      {!noSide && <polygon points={`${B} ${F} ${G} ${C}`} fill={sFill} stroke={m.edge} strokeWidth="0.6" />}
+      {m.gloss && <polygon points={`${A} ${B} ${C} ${Dv}`} fill={`url(#gG${id})`} />}
+      {m.grain && [0.2,0.4,0.6,0.78].map((t, i) => (
+        <line key={i} x1={px+W*t} y1={py} x2={px+W*t} y2={py-H}
+          stroke="rgba(0,0,0,0.07)" strokeWidth="0.7" />
+      ))}
+    </g>
+  );
+}
+
+function Handle({ x, y, len = 18, vert = false, color }: {
+  x:number; y:number; len?:number; vert?:boolean; color:string;
+}) {
+  const x2 = vert ? x : x+len;
+  const y2 = vert ? y+len : y;
+  return (
+    <g>
+      <line x1={x} y1={y} x2={x2} y2={y2} stroke="rgba(0,0,0,0.25)" strokeWidth="3" strokeLinecap="round" />
+      <line x1={x} y1={y} x2={x2} y2={y2} stroke={color} strokeWidth="2" strokeLinecap="round" />
     </g>
   );
 }
 
 // ─── КУХНЯ ───────────────────────────────────────────────────────────────────
-function KitchenSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
-  // Нижний ящичный блок: ширина W, высота ~0.38H, глубина D
-  const bh = H * 0.38;
-  const uh = H * 0.32; // верхние шкафы
-  const gap = H * 0.08; // пространство между
-
-  // Столешница чуть шире
-  const tw = W + 4;
-  const th = H * 0.04;
-
-  // Центрируем
-  const ox = (200 - W) / 2;
-  const oy = 175;
-
-  const topFace = c.gloss ? "#ffffff" : c.face;
+function KitchenSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+  const BH = H*0.42; const UH = H*0.35; const TH = 6; const GAP = H*0.07;
+  const UW = W*0.85; const UX = W*0.075;
+  const ox = 20, oy = 175;
+  const cx = D*0.866, cy = D*0.5;
 
   return (
-    <svg viewBox="0 0 200 190" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
-      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={180} rx={W * 0.45} ry={5} fill="rgba(0,0,0,0.13)" />
+    <svg viewBox="0 0 260 210" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <Defs id={id} m={m} />
+      <ellipse cx={ox+W*0.5+cx*0.4} cy={oy+4} rx={W*0.52} ry={7} fill={`url(#gSh${id})`} filter={`url(#blur${id})`} />
 
-      {/* Нижний блок */}
-      <IsoBox ox={ox} oy={oy} W={W} H={bh} D={D} face={c.face} top={c.top} side={c.side} />
-
-      {/* Столешница */}
-      <IsoBox ox={ox - 2} oy={oy - bh} W={tw} H={th} D={D + 2} face={c.handle} top={c.gloss ? "#eee" : "#7a5c35"} side={c.side} />
-
-      {/* Верхние шкафы — чуть уже */}
-      <IsoBox ox={ox + W * 0.05} oy={oy - bh - th - gap * H} W={W * 0.9} H={uh} D={D * 0.7}
-        face={c.face} top={c.top} side={c.side}
-      />
-
-      {/* Разделители нижнего блока */}
-      {[0.33, 0.66].map((t, i) => (
-        <line key={i}
-          x1={ox + W * t} y1={oy}
-          x2={ox + W * t} y2={oy - bh}
-          stroke={c.side} strokeWidth="0.8"
-        />
+      {[0,1,2].map(i => (
+        <Box key={i} id={id} m={m} px={ox+W/3*i} py={oy} W={W/3} H={BH} D={0} noTop noSide />
       ))}
+      <polygon points={`${ox},${oy-BH} ${ox+W},${oy-BH} ${ox+W+cx},${oy-BH-cy} ${ox+cx},${oy-BH-cy}`}
+        fill={`url(#gT${id})`} stroke={m.edge} strokeWidth="0.6" />
+      <polygon points={`${ox+W},${oy} ${ox+W+cx},${oy-cy} ${ox+W+cx},${oy-BH-cy} ${ox+W},${oy-BH}`}
+        fill={`url(#gS${id})`} stroke={m.edge} strokeWidth="0.6" />
 
-      {/* Ручки нижнего */}
-      {[0.16, 0.5, 0.83].map((t, i) => (
-        <line key={i}
-          x1={ox + W * t - 6} y1={oy - bh * 0.45}
-          x2={ox + W * t + 6} y2={oy - bh * 0.45}
-          stroke={c.handle} strokeWidth="1.5" strokeLinecap="round"
-        />
+      <Box id={id} m={m} px={ox-2} py={oy-BH} W={W+4} H={TH} D={D+3}
+        faceOverride={m.grain?"#5a3a10":"#888"} topOverride={m.grain?"#7a5218":"#ccc"} sideOverride={m.grain?"#3d2008":"#aaa"} />
+
+      <ellipse cx={ox+W*0.22} cy={oy-BH-TH*0.5} rx={W*0.12} ry={4}
+        fill="rgba(140,190,215,0.55)" stroke="#8fb0c8" strokeWidth="0.8" />
+      <path d={`M${ox+W*0.22},${oy-BH-TH-8} Q${ox+W*0.26},${oy-BH-TH-14} ${ox+W*0.3},${oy-BH-TH-8}`}
+        stroke="#aaa" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+
+      <Box id={id} m={m} px={ox+UX} py={oy-BH-TH-GAP} W={UW} H={UH} D={D*0.65} />
+      <line x1={ox+UX+UW*0.5} y1={oy-BH-TH-GAP} x2={ox+UX+UW*0.5} y2={oy-BH-TH-GAP-UH}
+        stroke={m.edge} strokeWidth="0.8" />
+
+      {[0.14,0.47,0.8].map((t,i) => <Handle key={i} x={ox+W*t} y={oy-BH*0.42} len={16} color={m.handle} />)}
+      {[0.2,0.72].map((t,i) => <Handle key={i} x={ox+UX+UW*t} y={oy-BH-TH-GAP-UH*0.65} len={14} color={m.handle} />)}
+
+      <polygon points={`${ox},${oy-BH-TH} ${ox+W},${oy-BH-TH} ${ox+W},${oy-BH-TH-GAP} ${ox},${oy-BH-TH-GAP}`}
+        fill="rgba(200,210,220,0.5)" stroke="rgba(150,160,170,0.4)" strokeWidth="0.5" />
+      {[0.25,0.5,0.75].map((t,i) => (
+        <line key={i} x1={ox+W*t} y1={oy-BH-TH} x2={ox+W*t} y2={oy-BH-TH-GAP}
+          stroke="rgba(150,160,170,0.3)" strokeWidth="0.4" />
       ))}
-
-      {/* Ручки верхних */}
-      {[0.3, 0.7].map((t, i) => (
-        <line key={i}
-          x1={ox + W * 0.05 + W * 0.9 * t - 5} y1={oy - bh - th - gap * H - uh * 0.6}
-          x2={ox + W * 0.05 + W * 0.9 * t + 5} y2={oy - bh - th - gap * H - uh * 0.6}
-          stroke={c.handle} strokeWidth="1.5" strokeLinecap="round"
-        />
-      ))}
-
-      {/* Мойка (только если достаточно широко) */}
-      {W > 50 && (
-        <ellipse
-          cx={ox + W * 0.25} cy={oy - bh - th * 0.5}
-          rx={W * 0.14} ry={th * 1.5}
-          fill="rgba(160,200,220,0.5)" stroke={c.side} strokeWidth="0.6"
-        />
-      )}
     </svg>
   );
 }
 
 // ─── ШКАФ-КУПЕ ───────────────────────────────────────────────────────────────
-function WardrobeSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
-  const ox = (200 - W) / 2;
-  const oy = 175;
+function WardrobeSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+  const ox = 18, oy = 175;
+  const PH = H*0.04;
 
   return (
-    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
-      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={182} rx={W * 0.45} ry={5} fill="rgba(0,0,0,0.13)" />
+    <svg viewBox="0 0 260 210" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <Defs id={id} m={m} />
+      <ellipse cx={ox+W*0.5+D*0.866*0.4} cy={oy+4} rx={W*0.52} ry={7} fill={`url(#gSh${id})`} filter={`url(#blur${id})`} />
 
-      {/* Корпус */}
-      <IsoBox ox={ox} oy={oy} W={W} H={H} D={D} face={c.face} top={c.top} side={c.side} />
+      <Box id={id} m={m} px={ox} py={oy} W={W} H={PH} D={D}
+        faceOverride={m.s1} topOverride={m.s1} sideOverride={m.edge} />
+      <Box id={id} m={m} px={ox} py={oy-PH} W={W} H={H-PH} D={D} />
 
-      {/* Вертикальный разделитель дверей */}
-      <line x1={ox + W / 2} y1={oy} x2={ox + W / 2} y2={oy - H} stroke={c.side} strokeWidth="1.5" />
+      <Box id={id} m={m} px={ox} py={oy-PH} W={W} H={4} D={D+2}
+        faceOverride="#999" topOverride="#bbb" sideOverride="#888" />
+      <Box id={id} m={m} px={ox} py={oy-PH-(H-PH)+4} W={W} H={4} D={D*0.3}
+        faceOverride="#999" topOverride="#bbb" sideOverride="#888" />
 
-      {/* Зеркало на левой двери */}
-      <rect
-        x={ox + W * 0.04} y={oy - H * 0.92}
-        width={W * 0.42} height={H * 0.82}
-        fill="rgba(180,215,235,0.28)" stroke={c.top} strokeWidth="0.7"
-      />
+      <polygon
+        points={`${ox+2},${oy-PH-4} ${ox+W*0.49},${oy-PH-4} ${ox+W*0.49},${oy-PH-(H-PH)+8} ${ox+2},${oy-PH-(H-PH)+8}`}
+        fill="rgba(185,215,235,0.35)" stroke="rgba(180,210,230,0.6)" strokeWidth="0.8" />
+      <polygon
+        points={`${ox+2},${oy-PH-4} ${ox+W*0.18},${oy-PH-4} ${ox+W*0.14},${oy-PH-(H-PH)+8} ${ox+2},${oy-PH-(H-PH)+8}`}
+        fill="rgba(255,255,255,0.18)" />
 
-      {/* Правая дверь — рисунок под дерево / глянец */}
-      {c.gloss ? (
-        <rect
-          x={ox + W * 0.52} y={oy - H * 0.92}
-          width={W * 0.44} height={H * 0.82}
-          fill="rgba(255,255,255,0.18)" stroke={c.top} strokeWidth="0.7"
-        />
-      ) : (
-        <>
-          <line x1={ox + W * 0.56} y1={oy - H * 0.9} x2={ox + W * 0.58} y2={oy - H * 0.08} stroke={c.top} strokeWidth="0.6" opacity="0.5" />
-          <line x1={ox + W * 0.66} y1={oy - H * 0.9} x2={ox + W * 0.68} y2={oy - H * 0.08} stroke={c.top} strokeWidth="0.6" opacity="0.5" />
-        </>
+      <polygon
+        points={`${ox+W*0.51},${oy-PH-4} ${ox+W-2},${oy-PH-4} ${ox+W-2},${oy-PH-(H-PH)+8} ${ox+W*0.51},${oy-PH-(H-PH)+8}`}
+        fill={`url(#gF${id})`} stroke={m.edge} strokeWidth="0.5" />
+      {m.grain && [0.58,0.66,0.74,0.82,0.9].map((t,i) => (
+        <line key={i} x1={ox+W*t} y1={oy-PH-4} x2={ox+W*t} y2={oy-PH-(H-PH)+8}
+          stroke="rgba(0,0,0,0.06)" strokeWidth="0.7" />
+      ))}
+      {m.gloss && (
+        <polygon
+          points={`${ox+W*0.51},${oy-PH-4} ${ox+W*0.68},${oy-PH-4} ${ox+W*0.65},${oy-PH-(H-PH)+8} ${ox+W*0.51},${oy-PH-(H-PH)+8}`}
+          fill="rgba(255,255,255,0.14)" />
       )}
 
-      {/* Ручки */}
-      {[0.44, 0.92].map((t, i) => (
-        <line key={i}
-          x1={ox + W * t} y1={oy - H * 0.46}
-          x2={ox + W * t} y2={oy - H * 0.54}
-          stroke={c.handle} strokeWidth="2" strokeLinecap="round"
-        />
-      ))}
-
-      {/* Плинтус */}
-      <IsoBox ox={ox + W * 0.02} oy={oy} W={W * 0.96} H={H * 0.04} D={D * 0.95}
-        face={c.side} top={c.side} side={c.handle}
-      />
+      <Handle x={ox+W*0.44} y={oy-PH-(H-PH)*0.52} len={12} vert color={m.handle} />
+      <Handle x={ox+W*0.54} y={oy-PH-(H-PH)*0.52} len={12} vert color={m.handle} />
     </svg>
   );
 }
 
 // ─── ДИВАН ───────────────────────────────────────────────────────────────────
-function SofaSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
-  // H — высота спинки, D — глубина сиденья
-  const armW = W * 0.1;
-  const seatH = H * 0.38;
-  const backH = H * 0.55;
-  const legH = H * 0.12;
-  const ox = (200 - W) / 2;
-  const oy = 175;
+function SofaSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+  const ox = 12, oy = 172;
+  const armW = W*0.11; const seatH = H*0.36; const backH = H*0.5; const legH = H*0.14;
+  const legColor = m.grain ? "#3d2008" : "#444";
 
   return (
-    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
-      <ellipse cx={ox + W / 2 + D * ISO_X * 0.4} cy={181} rx={W * 0.42} ry={5} fill="rgba(0,0,0,0.12)" />
+    <svg viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <Defs id={id} m={m} />
+      <ellipse cx={ox+W*0.5+D*0.866*0.35} cy={oy+5} rx={W*0.5} ry={7} fill={`url(#gSh${id})`} filter={`url(#blur${id})`} />
 
-      {/* Ножки */}
-      {[ox + armW * 0.5, ox + W - armW * 0.5].map((x, i) => (
-        <IsoBox key={i} ox={x - 3} oy={oy} W={6} H={legH} D={5}
-          face={c.handle} top={c.side} side={c.handle}
-        />
+      {[ox+armW*0.4, ox+W-armW*0.4-5].map((lx,i) => (
+        <Box key={i} id={id} m={m} px={lx} py={oy} W={5} H={legH} D={4}
+          faceOverride={legColor} topOverride={legColor} sideOverride={legColor} />
       ))}
 
-      {/* Сиденье */}
-      <IsoBox ox={ox} oy={oy - legH} W={W} H={seatH} D={D}
-        face={c.face} top={c.top} side={c.side}
-      />
+      <Box id={id} m={m} px={ox} py={oy-legH} W={W} H={seatH} D={D} />
+      <Box id={id} m={m} px={ox} py={oy-legH-seatH} W={W} H={backH} D={D*0.25} />
 
-      {/* Спинка */}
-      <IsoBox ox={ox} oy={oy - legH - seatH} W={W} H={backH} D={D * 0.28}
-        face={c.face} top={c.top} side={c.side}
-      />
+      <Box id={id} m={m} px={ox} py={oy-legH} W={armW} H={seatH+backH*0.72} D={D}
+        faceOverride={m.f1} topOverride={m.t0} sideOverride={m.s1} />
+      <Box id={id} m={m} px={ox+W-armW} py={oy-legH} W={armW} H={seatH+backH*0.72} D={D}
+        faceOverride={m.f1} topOverride={m.t0} sideOverride={m.s1} />
 
-      {/* Подлокотники */}
-      <IsoBox ox={ox} oy={oy - legH} W={armW} H={seatH + backH * 0.7} D={D}
-        face={c.side} top={c.top} side={c.handle}
-      />
-      <IsoBox ox={ox + W - armW} oy={oy - legH} W={armW} H={seatH + backH * 0.7} D={D}
-        face={c.side} top={c.top} side={c.handle}
-      />
+      {(W > 80 ? [0.15,0.51,0.77] : [0.2,0.62]).map((t,i) => (
+        <Box key={i} id={id} m={m}
+          px={ox+armW+(W-2*armW)*t} py={oy-legH-seatH}
+          W={(W-2*armW)*0.29} H={seatH*0.28} D={D*0.9}
+          faceOverride={m.t0} topOverride={m.f0} sideOverride={m.s0} opacity={0.9} />
+      ))}
 
-      {/* Подушки на сиденье */}
-      {[0.18, 0.52, 0.82].filter((_, i) => W > 70 || i < 2).map((t, i) => (
-        <IsoBox key={i}
-          ox={ox + armW + (W - 2 * armW) * (t - 0.13)} oy={oy - legH - seatH}
-          W={(W - 2 * armW) * 0.28} H={seatH * 0.3} D={D * 0.88}
-          face={c.top} top={c.face} side={c.side} opacity={0.85}
-        />
+      {(W > 80 ? [0.18,0.72] : [0.45]).map((t,i) => (
+        <Box key={i} id={id} m={m}
+          px={ox+armW+(W-2*armW)*t} py={oy-legH-seatH-backH*0.6}
+          W={(W-2*armW)*0.22} H={backH*0.55} D={D*0.22}
+          faceOverride={m.f0} topOverride={m.t0} sideOverride={m.s0} opacity={0.85} />
       ))}
     </svg>
   );
 }
 
 // ─── СПАЛЬНЯ ─────────────────────────────────────────────────────────────────
-function BedroomSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
-  const headH = H * 0.55;   // изголовье
-  const frameH = H * 0.18;  // рама кровати
-  const mattH = H * 0.2;    // матрас
-  const legH = H * 0.07;
-  const ox = (200 - W) / 2;
-  const oy = 175;
+function BedroomSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+  const ox = 14, oy = 170;
+  const frameH = H*0.18; const mattH = H*0.2; const headH = H*0.55; const legH = H*0.07;
+  const cx = D*0.866; const cy = D*0.5;
 
   return (
-    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
-      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={181} rx={W * 0.46} ry={5} fill="rgba(0,0,0,0.12)" />
+    <svg viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <Defs id={id} m={m} />
+      <ellipse cx={ox+W*0.5+cx*0.45} cy={oy+5} rx={W*0.5} ry={7} fill={`url(#gSh${id})`} filter={`url(#blur${id})`} />
 
-      {/* Ножки */}
-      {[ox + 4, ox + W - 10].map((x, i) => (
-        <IsoBox key={i} ox={x} oy={oy} W={6} H={legH} D={5}
-          face={c.handle} top={c.side} side={c.handle}
-        />
+      {[ox+4, ox+W-10].map((lx,i) => (
+        <Box key={i} id={id} m={m} px={lx} py={oy} W={6} H={legH} D={5}
+          faceOverride={m.s1} topOverride={m.s1} sideOverride={m.edge} />
       ))}
 
-      {/* Рама кровати */}
-      <IsoBox ox={ox} oy={oy - legH} W={W} H={frameH} D={D}
-        face={c.face} top={c.top} side={c.side}
-      />
+      <Box id={id} m={m} px={ox} py={oy-legH} W={W} H={frameH} D={D} />
 
-      {/* Матрас */}
-      <IsoBox ox={ox + W * 0.03} oy={oy - legH - frameH} W={W * 0.94} H={mattH} D={D * 0.94}
-        face="#f0eeea" top="#e8e6e0" side="#d5d2ca"
-      />
-
-      {/* Подушки */}
-      {[0.08, 0.54].filter((_, i) => W > 50 || i === 0).map((t, i) => (
-        <IsoBox key={i}
-          ox={ox + W * (0.06 + t * 0.88)} oy={oy - legH - frameH - mattH}
-          W={W * 0.38} H={mattH * 0.55} D={D * 0.32}
-          face="#ffffff" top="#f0f0f0" side="#ddd"
-        />
+      <Box id={id} m={m} px={ox+W*0.025} py={oy-legH-frameH} W={W*0.95} H={mattH} D={D*0.95}
+        faceOverride="#eeeae4" topOverride="#f5f3ee" sideOverride="#d8d4cc" />
+      {[0.25,0.5,0.75].map((t,i) => (
+        <line key={i} x1={ox+W*0.025+W*0.95*t} y1={oy-legH-frameH}
+          x2={ox+W*0.025+W*0.95*t} y2={oy-legH-frameH-mattH}
+          stroke="rgba(0,0,0,0.06)" strokeWidth="0.7" />
       ))}
 
-      {/* Изголовье */}
-      <IsoBox ox={ox} oy={oy - legH - frameH - mattH} W={W} H={headH} D={D * 0.18}
-        face={c.face} top={c.top} side={c.side}
-      />
+      <polygon points={`
+        ${ox+W*0.025},${oy-legH-frameH-mattH}
+        ${ox+W*0.975},${oy-legH-frameH-mattH}
+        ${ox+W*0.975+cx*0.95},${oy-legH-frameH-mattH-cy*0.95}
+        ${ox+W*0.025+cx*0.95},${oy-legH-frameH-mattH-cy*0.95}
+      `} fill="#f0ece4" stroke="#d8d4cc" strokeWidth="0.6" />
 
-      {/* Декор на изголовье — мягкая обивка */}
-      <rect
-        x={ox + W * 0.06} y={oy - legH - frameH - mattH - headH * 0.88}
-        width={W * 0.88} height={headH * 0.78}
-        rx="3"
-        fill={c.gloss ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.06)"}
-        stroke={c.top} strokeWidth="0.7"
-      />
+      {(W > 80 ? [0.07,0.52] : [0.2]).map((t,i) => (
+        <Box key={i} id={id} m={m}
+          px={ox+W*0.04+W*0.9*t} py={oy-legH-frameH-mattH}
+          W={W*0.38} H={mattH*0.6} D={D*0.3}
+          faceOverride="#ffffff" topOverride="#f5f5f5" sideOverride="#ddd" />
+      ))}
+
+      <Box id={id} m={m} px={ox} py={oy-legH-frameH-mattH} W={W} H={headH} D={D*0.15} />
+      <polygon points={`
+        ${ox+W*0.05},${oy-legH-frameH-mattH-headH*0.9}
+        ${ox+W*0.95},${oy-legH-frameH-mattH-headH*0.9}
+        ${ox+W*0.95},${oy-legH-frameH-mattH-headH*0.06}
+        ${ox+W*0.05},${oy-legH-frameH-mattH-headH*0.06}
+      `} fill={m.gloss ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.07)"} />
+      <line x1={ox+W*0.05} y1={oy-legH-frameH-mattH-headH*0.5}
+        x2={ox+W*0.95} y2={oy-legH-frameH-mattH-headH*0.5}
+        stroke={m.edge} strokeWidth="0.5" strokeDasharray="3 3" />
+
+      {[-W*0.2-4, W+4].map((dx,i) => (
+        <Box key={i} id={id} m={m} px={ox+dx} py={oy-legH}
+          W={W*0.18} H={mattH+frameH*0.5} D={D*0.55} opacity={0.9} />
+      ))}
     </svg>
   );
 }
 
 // ─── ПРИХОЖАЯ ────────────────────────────────────────────────────────────────
-function HalwaySVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
-  const ox = (200 - W) / 2;
-  const oy = 175;
-  const shelfH = H * 0.06;
+function HallawaySVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+  const ox = 20, oy = 175;
+  const shoeH = H*0.25; const bodyH = H*0.55;
 
   return (
-    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
-      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={181} rx={W * 0.44} ry={5} fill="rgba(0,0,0,0.12)" />
+    <svg viewBox="0 0 260 210" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <Defs id={id} m={m} />
+      <ellipse cx={ox+W*0.5} cy={oy+4} rx={W*0.48} ry={6} fill={`url(#gSh${id})`} filter={`url(#blur${id})`} />
 
-      {/* Нижний ящик для обуви */}
-      <IsoBox ox={ox} oy={oy} W={W} H={H * 0.22} D={D}
-        face={c.face} top={c.top} side={c.side}
-      />
-      {/* Корпус */}
-      <IsoBox ox={ox} oy={oy - H * 0.22} W={W} H={H * 0.62} D={D * 0.7}
-        face={c.face} top={c.top} side={c.side}
-      />
-      {/* Полки */}
-      {[0.35, 0.65].map((t, i) => (
-        <IsoBox key={i} ox={ox + W * 0.03} oy={oy - H * 0.22 - H * 0.62 * t} W={W * 0.94} H={shelfH} D={D * 0.66}
-          face={c.top} top={c.top} side={c.side}
-        />
+      <Box id={id} m={m} px={ox} py={oy} W={W} H={shoeH} D={D} />
+      <Handle x={ox+W*0.38} y={oy-shoeH*0.45} len={W*0.24} color={m.handle} />
+
+      <Box id={id} m={m} px={ox} py={oy-shoeH} W={W} H={bodyH} D={D*0.65} />
+      {[0.3,0.62].map((t,i) => (
+        <Box key={i} id={id} m={m} px={ox+W*0.03} py={oy-shoeH-bodyH*t}
+          W={W*0.94} H={5} D={D*0.62}
+          faceOverride={m.t0} topOverride={m.t1} sideOverride={m.s1} />
       ))}
-      {/* Зеркало */}
-      <rect x={ox + W * 0.15} y={oy - H} width={W * 0.7} height={H * 0.13}
-        fill="rgba(180,215,235,0.3)" stroke={c.top} strokeWidth="0.8"
-      />
-      {/* Крючки */}
-      {[0.2, 0.45, 0.7].map((t, i) => (
+
+      <polygon points={`${ox+W*0.1},${oy-shoeH-bodyH-H*0.04} ${ox+W*0.9},${oy-shoeH-bodyH-H*0.04} ${ox+W*0.9},${oy-shoeH-bodyH-H*0.2} ${ox+W*0.1},${oy-shoeH-bodyH-H*0.2}`}
+        fill="rgba(185,215,235,0.4)" stroke="rgba(180,210,230,0.7)" strokeWidth="1" />
+      <polygon points={`${ox+W*0.1},${oy-shoeH-bodyH-H*0.04} ${ox+W*0.22},${oy-shoeH-bodyH-H*0.04} ${ox+W*0.18},${oy-shoeH-bodyH-H*0.2} ${ox+W*0.1},${oy-shoeH-bodyH-H*0.2}`}
+        fill="rgba(255,255,255,0.2)" />
+
+      {[0.18,0.42,0.66,0.88].map((t,i) => (
         <g key={i}>
-          <circle cx={ox + W * t} cy={oy - H * 0.88} r={2.5} fill={c.handle} />
-          <line x1={ox + W * t} y1={oy - H * 0.88} x2={ox + W * t + 3} y2={oy - H * 0.78}
-            stroke={c.handle} strokeWidth="1.5" strokeLinecap="round"
-          />
+          <circle cx={ox+W*t} cy={oy-shoeH-bodyH-H*0.005} r={2.5} fill={m.handle} stroke={m.edge} strokeWidth="0.5" />
+          <path d={`M${ox+W*t},${oy-shoeH-bodyH-H*0.005} Q${ox+W*t+6},${oy-shoeH-bodyH+H*0.04} ${ox+W*t+4},${oy-shoeH-bodyH+H*0.09}`}
+            stroke={m.handle} strokeWidth="1.8" fill="none" strokeLinecap="round" />
         </g>
       ))}
     </svg>
@@ -340,150 +370,151 @@ function HalwaySVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnT
 }
 
 // ─── КАБИНЕТ ─────────────────────────────────────────────────────────────────
-function OfficeSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
-  const deskH = H * 0.1;
-  const deskD = D * 0.85;
-  const legH = H * 0.48;
-  const cabinetW = W * 0.35;
-  const ox = (200 - W) / 2;
-  const oy = 175;
+function OfficeSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+  const ox = 14, oy = 168;
+  const deskH = H*0.09; const legH = H*0.48; const cabW = W*0.36; const cabH = legH+deskH;
 
   return (
-    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
-      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={181} rx={W * 0.44} ry={5} fill="rgba(0,0,0,0.12)" />
+    <svg viewBox="0 0 280 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <Defs id={id} m={m} />
+      <ellipse cx={ox+W*0.5} cy={oy+5} rx={W*0.5} ry={7} fill={`url(#gSh${id})`} filter={`url(#blur${id})`} />
 
-      {/* Тумба-шкаф */}
-      <IsoBox ox={ox} oy={oy} W={cabinetW} H={legH + deskH} D={deskD}
-        face={c.face} top={c.top} side={c.side}
-      />
-      {/* Ножки стола */}
-      <IsoBox ox={ox + W - 8} oy={oy} W={6} H={legH} D={5}
-        face={c.handle} top={c.side} side={c.handle}
-      />
-      {/* Столешница */}
-      <IsoBox ox={ox} oy={oy - legH} W={W} H={deskH} D={deskD}
-        face={c.top} top={c.gloss ? "#eee" : "#7a5c35"} side={c.side}
-      />
-      {/* Надстройка */}
-      <IsoBox ox={ox + W * 0.55} oy={oy - legH - deskH} W={W * 0.42} H={H * 0.38} D={D * 0.35}
-        face={c.face} top={c.top} side={c.side}
-      />
-      {/* Ручки тумбы */}
-      {[0.35, 0.7].map((t, i) => (
-        <circle key={i} cx={ox + cabinetW * 0.5} cy={oy - (legH + deskH) * t} r={3}
-          fill="none" stroke={c.handle} strokeWidth="1.2"
-        />
+      <Box id={id} m={m} px={ox} py={oy} W={cabW} H={cabH} D={D*0.85} />
+      {[0.3,0.65].map((t,i) => (
+        <Handle key={i} x={ox+cabW*0.25} y={oy-cabH*t} len={cabW*0.5} color={m.handle} />
       ))}
-      {/* Монитор */}
-      <rect x={ox + W * 0.3} y={oy - legH - deskH - H * 0.32}
-        width={W * 0.22} height={H * 0.26}
-        rx="2" fill="rgba(30,30,40,0.7)" stroke={c.side} strokeWidth="0.8"
-      />
-      <rect x={ox + W * 0.37} y={oy - legH - deskH - H * 0.06}
-        width={W * 0.08} height={H * 0.05}
-        fill={c.side}
-      />
+      <Box id={id} m={m} px={ox+W-8} py={oy} W={7} H={legH} D={6}
+        faceOverride={m.s1} topOverride={m.s0} sideOverride={m.edge} />
+      <Box id={id} m={m} px={ox-2} py={oy-legH} W={W+4} H={deskH} D={D*0.85+2}
+        faceOverride={m.grain?"#6b3e10":"#888"} topOverride={m.grain?"#8a5218":"#ccc"} sideOverride={m.grain?"#4a2a08":"#aaa"} />
+
+      <Box id={id} m={m} px={ox+W*0.52} py={oy-legH-deskH} W={W*0.45} H={H*0.38} D={D*0.35} />
+      <Box id={id} m={m} px={ox+W*0.52+1} py={oy-legH-deskH-H*0.38*0.45} W={W*0.44} H={4} D={D*0.33}
+        faceOverride={m.t0} topOverride={m.t1} sideOverride={m.s1} />
+
+      <Box id={id} m={m} px={ox+W*0.17} py={oy-legH-deskH-H*0.36} W={W*0.28} H={H*0.3} D={3}
+        faceOverride="#1a1c24" topOverride="#252830" sideOverride="#111" />
+      <polygon points={`${ox+W*0.18},${oy-legH-deskH-H*0.34} ${ox+W*0.44},${oy-legH-deskH-H*0.34} ${ox+W*0.44},${oy-legH-deskH-H*0.06} ${ox+W*0.18},${oy-legH-deskH-H*0.06}`}
+        fill="rgba(80,120,200,0.25)" />
+      <Box id={id} m={m} px={ox+W*0.26} py={oy-legH-deskH} W={W*0.08} H={H*0.04} D={D*0.18}
+        faceOverride="#222" topOverride="#333" sideOverride="#111" />
+      <Box id={id} m={m} px={ox+W*0.12} py={oy-legH-deskH} W={W*0.28} H={3} D={D*0.38}
+        faceOverride="#ccc" topOverride="#ddd" sideOverride="#aaa" />
     </svg>
   );
 }
 
 // ─── ВАННАЯ ──────────────────────────────────────────────────────────────────
-function BathroomSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
-  const ox = (200 - W) / 2;
-  const oy = 175;
+function BathroomSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+  const ox = 24, oy = 172;
+  const cabH = H*0.52; const topH = 6;
 
   return (
-    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
-      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={181} rx={W * 0.42} ry={5} fill="rgba(0,0,0,0.12)" />
+    <svg viewBox="0 0 240 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <Defs id={id} m={m} />
+      <ellipse cx={ox+W*0.5} cy={oy+4} rx={W*0.48} ry={6} fill={`url(#gSh${id})`} filter={`url(#blur${id})`} />
 
-      {/* Корпус тумбы */}
-      <IsoBox ox={ox} oy={oy} W={W} H={H * 0.55} D={D}
-        face={c.face} top={c.top} side={c.side}
-      />
-      {/* Столешница с раковиной */}
-      <IsoBox ox={ox - 2} oy={oy - H * 0.55} W={W + 4} H={H * 0.06} D={D + 3}
-        face="#e0e0e0" top="#f0f0f0" side="#ccc"
-      />
-      {/* Раковина */}
-      <ellipse
-        cx={ox + W * 0.5} cy={oy - H * 0.55 - H * 0.02}
-        rx={W * 0.28} ry={W * 0.12}
-        fill="rgba(200,230,245,0.6)" stroke="#bbb" strokeWidth="0.8"
-      />
-      {/* Зеркало-шкаф */}
-      <IsoBox ox={ox + W * 0.05} oy={oy - H * 0.61} W={W * 0.9} H={H * 0.38} D={D * 0.22}
-        face="rgba(180,215,235,0.4)" top={c.top} side={c.side}
-      />
-      {/* Ручки */}
-      <line x1={ox + W * 0.4} y1={oy - H * 0.35} x2={ox + W * 0.6} y2={oy - H * 0.35}
-        stroke={c.handle} strokeWidth="1.5" strokeLinecap="round"
-      />
+      <Box id={id} m={m} px={ox} py={oy} W={W} H={cabH} D={D} />
+      {[0.25,0.7].map((t,i) => <Handle key={i} x={ox+W*t-8} y={oy-cabH*0.45} len={16} color={m.handle} />)}
+
+      <Box id={id} m={m} px={ox-3} py={oy-cabH} W={W+6} H={topH} D={D+4}
+        faceOverride="#d5d5d5" topOverride="#ebebeb" sideOverride="#bbb" />
+
+      <ellipse cx={ox+W*0.5} cy={oy-cabH-topH*0.3} rx={W*0.3} ry={W*0.13}
+        fill="rgba(200,225,240,0.55)" stroke="#aac8dc" strokeWidth="1.2" />
+      <ellipse cx={ox+W*0.5} cy={oy-cabH-topH*0.3} rx={W*0.22} ry={W*0.09}
+        fill="rgba(150,200,225,0.4)" stroke="#9abcd0" strokeWidth="0.7" />
+      <circle cx={ox+W*0.5} cy={oy-cabH-topH*0.3} r={2.5} fill="#888" />
+
+      <Box id={id} m={m} px={ox+W*0.44} py={oy-cabH-topH-14} W={W*0.12} H={14} D={3}
+        faceOverride="#c0c0c0" topOverride="#ddd" sideOverride="#aaa" />
+      <path d={`M${ox+W*0.5},${oy-cabH-topH-12} Q${ox+W*0.62},${oy-cabH-topH-12} ${ox+W*0.62},${oy-cabH-topH-5}`}
+        stroke="#bbb" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+
+      <Box id={id} m={m} px={ox+W*0.06} py={oy-cabH-topH-H*0.05} W={W*0.88} H={H*0.38} D={D*0.2}
+        faceOverride="rgba(185,215,235,0.45)" topOverride={m.t1} sideOverride={m.s1} />
+      <polygon points={`${ox+W*0.06},${oy-cabH-topH-H*0.05} ${ox+W*0.22},${oy-cabH-topH-H*0.05} ${ox+W*0.18},${oy-cabH-topH-H*0.43} ${ox+W*0.06},${oy-cabH-topH-H*0.43}`}
+        fill="rgba(255,255,255,0.18)" />
+      <rect x={ox+W*0.06} y={oy-cabH-topH-H*0.05-H*0.38}
+        width={W*0.88} height={H*0.38}
+        fill="none" stroke={m.edge} strokeWidth="1.5" />
     </svg>
   );
 }
 
 // ─── ДЕТСКАЯ ─────────────────────────────────────────────────────────────────
-function ChildroomSVG({ W, H, D, c }: { W: number; H: number; D: number; c: ReturnType<typeof getC> }) {
-  const bedW = W * 0.55;
-  const deskW = W * 0.4;
-  const ox = (200 - W) / 2;
-  const oy = 175;
+function ChildroomSVG({ W, H, D, m, id }: { W:number; H:number; D:number; m:ReturnType<typeof getM>; id:string }) {
+  const ox = 14, oy = 172;
+  const bedW = W*0.52; const deskW = W*0.38;
+  const bedFrameH = H*0.17; const mattH = H*0.15; const headH = H*0.38; const legH = H*0.08;
+  const deskH = H*0.08; const deskLegH = H*0.45;
 
   return (
-    <svg viewBox="0 0 200 195" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ transition: "all 0.4s ease" }}>
-      <ellipse cx={ox + W / 2 + D * ISO_X * 0.5} cy={181} rx={W * 0.44} ry={5} fill="rgba(0,0,0,0.12)" />
+    <svg viewBox="0 0 280 198" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <Defs id={id} m={m} />
+      <ellipse cx={ox+W*0.5} cy={oy+5} rx={W*0.5} ry={7} fill={`url(#gSh${id})`} filter={`url(#blur${id})`} />
 
-      {/* Кровать */}
-      <IsoBox ox={ox} oy={oy} W={bedW} H={H * 0.17} D={D * 0.85}
-        face={c.face} top={c.top} side={c.side}
-      />
-      <IsoBox ox={ox + bedW * 0.04} oy={oy - H * 0.17} W={bedW * 0.92} H={H * 0.14} D={D * 0.82}
-        face="#f0eeea" top="#e8e6e0" side="#d5d2ca"
-      />
-      <IsoBox ox={ox} oy={oy - H * 0.17 - H * 0.14} W={bedW} H={H * 0.32} D={D * 0.15}
-        face={c.face} top={c.top} side={c.side}
-      />
-
-      {/* Стол */}
-      <IsoBox ox={ox + bedW + W * 0.04} oy={oy - H * 0.42} W={deskW} H={H * 0.07} D={D * 0.55}
-        face={c.top} top="#999" side={c.side}
-      />
-      {/* Ножки стола */}
-      {[0, deskW - 5].map((dx, i) => (
-        <IsoBox key={i} ox={ox + bedW + W * 0.04 + dx} oy={oy} W={5} H={H * 0.42} D={4}
-          face={c.handle} top={c.side} side={c.handle}
-        />
+      {[ox+3, ox+bedW-9].map((lx,i) => (
+        <Box key={i} id={id} m={m} px={lx} py={oy} W={6} H={legH} D={5}
+          faceOverride={m.s1} topOverride={m.s1} sideOverride={m.edge} />
       ))}
-      {/* Полка над столом */}
-      <IsoBox ox={ox + bedW + W * 0.04} oy={oy - H * 0.7} W={deskW} H={H * 0.05} D={D * 0.3}
-        face={c.face} top={c.top} side={c.side}
-      />
+      <Box id={id} m={m} px={ox} py={oy-legH} W={bedW} H={bedFrameH} D={D} />
+      <Box id={id} m={m} px={ox+bedW*0.03} py={oy-legH-bedFrameH} W={bedW*0.94} H={mattH} D={D*0.94}
+        faceOverride="#f5f0e8" topOverride="#fff" sideOverride="#ddd" />
+      <Box id={id} m={m} px={ox+bedW*0.06} py={oy-legH-bedFrameH-mattH} W={bedW*0.38} H={mattH*0.55} D={D*0.28}
+        faceOverride="#fff" topOverride="#f5f5f5" sideOverride="#ddd" />
+      <Box id={id} m={m} px={ox} py={oy-legH-bedFrameH-mattH} W={bedW} H={headH} D={D*0.14} />
+
+      <Box id={id} m={m} px={ox+bedW+W*0.05} py={oy-deskLegH} W={deskW} H={deskH} D={D*0.58}
+        faceOverride={m.t0} topOverride={m.t0} sideOverride={m.s1} />
+      {[0, deskW-5].map((dx,i) => (
+        <Box key={i} id={id} m={m} px={ox+bedW+W*0.05+dx} py={oy} W={5} H={deskLegH} D={4}
+          faceOverride={m.s1} topOverride={m.s0} sideOverride={m.edge} />
+      ))}
+      <Box id={id} m={m} px={ox+bedW+W*0.05} py={oy-deskLegH-H*0.3} W={deskW} H={4} D={D*0.3}
+        faceOverride={m.f0} topOverride={m.t0} sideOverride={m.s1} />
+
+      {[0.08,0.2,0.32,0.5,0.65].map((t,i) => (
+        <Box key={i} id={id} m={m}
+          px={ox+bedW+W*0.05+deskW*t} py={oy-deskLegH-H*0.3}
+          W={deskW*0.1} H={H*0.18+i*3} D={D*0.26}
+          faceOverride={["#c0392b","#2980b9","#27ae60","#8e44ad","#e67e22"][i]}
+          topOverride={["#922b21","#1f618d","#1e8449","#6c3483","#b7770d"][i]}
+          sideOverride={["#7b241c","#1a5276","#196f3d","#5b2c6f","#9a7d0a"][i]}
+          opacity={0.9} />
+      ))}
     </svg>
   );
 }
 
 // ─── ГЛАВНЫЙ КОМПОНЕНТ ────────────────────────────────────────────────────────
-export default function FurniturePreview({ type, material, style, width, height, depth }: Props) {
-  const c = useMemo(() => getC(material), [material]);
+let _uid = 0;
+const MAT_NAMES: Record<string,string> = {
+  ldsp:"ЛДСП", mdf:"МДФ", massiv:"Массив дерева", mdf_kraska:"МДФ + эмаль",
+};
 
-  // Нормализуем размеры в пиксели SVG (viewBox 200)
-  // Диапазоны: W 60–400, H 60–280, D 30–90
+export default function FurniturePreview({ type, material, style, width, height, depth }: Props) {
+  const id = useMemo(() => `fp${_uid++}`, []);
+  const m  = useMemo(() => getM(material), [material]);
+
   const W = useMemo(() => {
-    if (type === "sofa")   return Math.min(Math.max((width  / 300) * 130, 55), 148);
-    if (type === "bedroom") return Math.min(Math.max((width  / 200) * 110, 70), 148);
-    return Math.min(Math.max((width  / 240) * 120, 55), 150);
+    const base = type === "sofa" ? 220 : type === "bedroom" ? 190 : 200;
+    const ref  = type === "sofa" ? 300 : type === "bedroom" ? 200 : 240;
+    return Math.min(Math.max((width / ref) * base, base * 0.42), base * 1.05);
   }, [width, type]);
 
   const H = useMemo(() => {
-    if (type === "sofa")   return Math.min(Math.max((depth  / 90) * 60,  38),  82);
-    if (type === "bedroom") return Math.min(Math.max((height / 220) * 95, 55), 130);
-    return Math.min(Math.max((height / 220) * 110, 50), 145);
+    if (type === "sofa")    return Math.min(Math.max((depth  / 90)  * 70,  36), 90);
+    if (type === "bedroom") return Math.min(Math.max((height / 220) * 110, 55), 138);
+    return Math.min(Math.max((height / 220) * 120, 52), 150);
   }, [height, depth, type]);
 
   const D = useMemo(() => {
-    if (type === "sofa")   return Math.min(Math.max((depth  / 90)  * 32, 18),  44);
-    return Math.min(Math.max((depth  / 65)  * 28, 14),  40);
+    if (type === "sofa") return Math.min(Math.max((depth / 90) * 38, 20), 50);
+    return Math.min(Math.max((depth / 65) * 32, 15), 44);
   }, [depth, type]);
+
+  const svgProps = { W, H, D, m, id };
 
   if (!type) {
     return (
@@ -498,37 +529,28 @@ export default function FurniturePreview({ type, material, style, width, height,
     );
   }
 
-  const svgProps = { W, H, D, c };
-
   return (
-    <div style={{ transition: "all 0.4s cubic-bezier(0.16,1,0.3,1)" }}>
+    <div>
       <div className="aspect-[4/3] flex items-center justify-center">
         {type === "kitchen"   && <KitchenSVG   {...svgProps} />}
         {type === "wardrobe"  && <WardrobeSVG  {...svgProps} />}
         {type === "sofa"      && <SofaSVG      {...svgProps} />}
         {type === "bedroom"   && <BedroomSVG   {...svgProps} />}
-        {type === "hallway"   && <HalwaySVG    {...svgProps} />}
+        {type === "hallway"   && <HallawaySVG  {...svgProps} />}
         {type === "office"    && <OfficeSVG    {...svgProps} />}
         {type === "bathroom"  && <BathroomSVG  {...svgProps} />}
         {type === "childroom" && <ChildroomSVG {...svgProps} />}
       </div>
 
-      {/* Легенда материала */}
       {material && (
-        <div className="flex items-center gap-2 px-1 mt-1">
-          <div className="w-3 h-3 rounded-sm flex-shrink-0 border border-white/10"
-            style={{ background: c.face }}
-          />
-          <span className="text-[9px] text-white/30 tracking-widest uppercase truncate">
-            {{
-              ldsp: "ЛДСП",
-              mdf: "МДФ",
-              massiv: "Массив дерева",
-              mdf_kraska: "МДФ эмаль",
-            }[material] ?? material}
+        <div className="flex items-center gap-2 px-1 mt-1 pb-1">
+          <div className="w-3 h-3 rounded-sm flex-shrink-0 ring-1 ring-white/10"
+            style={{ background: m.f0 }} />
+          <span className="text-[9px] text-white/30 tracking-widest uppercase">
+            {MAT_NAMES[material] ?? material}
           </span>
           <span className="ml-auto text-[9px] text-white/20 tabular-nums">
-            {width}×{height}×{depth}
+            {width}×{height}×{depth} см
           </span>
         </div>
       )}

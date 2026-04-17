@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import FurniturePreview from "@/components/FurniturePreview";
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
@@ -852,7 +853,21 @@ export default function Index() {
               </div>
 
               {/* Right: live summary */}
-              <div className="bg-[#111] text-white p-8 self-start sticky top-20">
+              <div className="bg-[#111] text-white self-start sticky top-20">
+                {/* 3D превью */}
+                <div className="border-b border-white/10 px-4 pt-4 pb-2">
+                  <p className="text-[9px] tracking-[0.25em] uppercase text-white/30 mb-2">Предварительный вид</p>
+                  <FurniturePreview
+                    type={calcType}
+                    material={calcMaterial}
+                    style={calcStyle}
+                    width={calcWidth}
+                    height={calcHeight}
+                    depth={calcDepth}
+                  />
+                </div>
+
+                <div className="p-6 md:p-8">
                 <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3">Предварительная стоимость</p>
                 <div className="font-display text-4xl font-light mb-1">
                   {calcType ? formatPrice(calcPrice()) : "—"}
@@ -886,6 +901,7 @@ export default function Index() {
                       })}
                     </div>
                   )}
+                </div>
                 </div>
               </div>
             </div>

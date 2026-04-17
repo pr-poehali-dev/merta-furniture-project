@@ -561,9 +561,24 @@ export default function Calculator() {
                 })}
               </div>
 
-              <button className="w-full bg-white text-[#111] py-3.5 text-[11px] tracking-widest uppercase hover:bg-[#f0f0f0] transition-colors">
+              <a
+                href={`https://wa.me/79181300668?text=${encodeURIComponent(
+                  `Здравствуйте! Хочу заказать бесплатный замер.\n\n` +
+                  `Тип мебели: ${calcTypeObj?.label ?? "—"}\n` +
+                  `Стиль: ${calcStyleObj?.label ?? "—"}\n` +
+                  `Материал: ${calcMaterialObj?.label ?? "—"}\n` +
+                  (hasFacadeStep ? `Фасад: ${calcFacadeObj?.label ?? "—"}\n` : "") +
+                  `Размеры: ${calcWidth}×${calcHeight}×${calcDepth} см\n` +
+                  (calcExtras.length > 0 ? `Опции: ${calcExtras.map(eid => availableExtras.find(x => x.id === eid)?.label).filter(Boolean).join(", ")}\n` : "") +
+                  `\nПримерная стоимость: ${formatPrice(calcPrice())}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-white text-[#111] py-3.5 text-[11px] tracking-widest uppercase hover:bg-[#f0f0f0] transition-colors flex items-center justify-center gap-2"
+              >
+                <Icon name="MessageCircle" size={15} />
                 Заказать бесплатный замер
-              </button>
+              </a>
             </div>
 
             <div className="flex flex-col gap-4">

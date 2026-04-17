@@ -991,19 +991,30 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ── INSTAGRAM ── */}
-      <section className="py-16 bg-[#f2f2f0]">
+      {/* ── INSTAGRAM / WHATSAPP ── */}
+      <section className="py-12 md:py-16 bg-[#f2f2f0]">
         <div className="max-w-7xl mx-auto px-5 md:px-10 text-center">
-          <p className="text-[10px] tracking-[0.3em] uppercase text-[#999] mb-5">Следите за нами</p>
-          <a
-            href="https://instagram.com/kuhni_merta"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 font-display text-3xl md:text-4xl font-light hover:opacity-40 transition-opacity"
-          >
-            <Icon name="Instagram" size={30} />
-            @kuhni_merta
-          </a>
+          <p className="text-[10px] tracking-[0.3em] uppercase text-[#999] mb-8">Связаться с нами</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="https://wa.me/79181300668"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto flex items-center justify-center gap-3 bg-[#111] text-white px-8 py-4 font-display text-xl font-light hover:bg-[#333] transition-colors duration-300"
+            >
+              <Icon name="MessageCircle" size={22} />
+              Написать в WhatsApp
+            </a>
+            <a
+              href="https://instagram.com/kuhni_merta"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto flex items-center justify-center gap-3 border border-[#bbb] text-[#111] px-8 py-4 font-display text-xl font-light hover:border-[#111] hover:bg-[#111] hover:text-white transition-colors duration-300"
+            >
+              <Icon name="Instagram" size={22} />
+              @kuhni_merta
+            </a>
+          </div>
         </div>
       </section>
 

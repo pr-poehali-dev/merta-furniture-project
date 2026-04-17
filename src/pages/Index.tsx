@@ -497,20 +497,20 @@ export default function Index() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
           {RECOMMENDATIONS.map((p) => (
             <div key={p.id} className="product-card group cursor-pointer">
               <div className="overflow-hidden aspect-[4/3] bg-[#eee] mb-4">
                 <img src={p.img} alt={p.name} className="card-img w-full h-full object-cover" />
               </div>
-              <p className="text-[10px] tracking-widest uppercase text-[#999] mb-1">{p.category} · {p.material}</p>
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="font-display text-2xl font-light">{p.name}</h3>
-                <p className="font-body text-sm font-semibold whitespace-nowrap ml-4">от {formatPrice(p.price)}</p>
+              <p className="text-[10px] tracking-widest uppercase text-[#999] mb-1 truncate">{p.category}</p>
+              <div className="flex flex-col mb-3">
+                <h3 className="font-display text-lg md:text-2xl font-light leading-tight">{p.name}</h3>
+                <p className="font-body text-sm font-semibold mt-1">от {formatPrice(p.price)}</p>
               </div>
               <button
                 onClick={() => addToCart(p)}
-                className="w-full border border-[#111] py-3 text-[11px] tracking-widest uppercase hover:bg-[#111] hover:text-white transition-colors duration-300"
+                className="w-full border border-[#111] py-2.5 text-[10px] tracking-widest uppercase hover:bg-[#111] hover:text-white transition-colors duration-300"
               >
                 В корзину
               </button>
@@ -598,7 +598,7 @@ export default function Index() {
               <p className="text-[11px] tracking-widest uppercase">Товары не найдены</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
               {filtered.map((p) => (
                 <div key={p.id} className="product-card bg-white group cursor-pointer">
                   <div className="overflow-hidden aspect-[4/3] bg-[#eee] relative">
@@ -609,16 +609,16 @@ export default function Index() {
                       </span>
                     )}
                   </div>
-                  <div className="p-5">
-                    <p className="text-[10px] tracking-widest uppercase text-[#999] mb-1">{p.category} · {p.material}</p>
-                    <h3 className="font-display text-2xl font-light mb-3">{p.name}</h3>
-                    <div className="flex items-center justify-between">
-                      <p className="font-body font-semibold text-sm">от {formatPrice(p.price)}</p>
+                  <div className="p-3 md:p-5">
+                    <p className="text-[10px] tracking-widest uppercase text-[#999] mb-1 truncate">{p.category}</p>
+                    <h3 className="font-display text-lg md:text-2xl font-light mb-2 leading-tight">{p.name}</h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-body font-semibold text-sm whitespace-nowrap">от {formatPrice(p.price)}</p>
                       <button
                         onClick={() => addToCart(p)}
-                        className="flex items-center gap-1.5 text-[11px] tracking-wider uppercase border border-[#111] px-3 py-2.5 hover:bg-[#111] hover:text-white transition-colors duration-300"
+                        className="flex items-center gap-1 text-[10px] tracking-wider uppercase border border-[#111] px-2 py-2 hover:bg-[#111] hover:text-white transition-colors duration-300 whitespace-nowrap"
                       >
-                        <Icon name="Plus" size={12} /> В корзину
+                        <Icon name="Plus" size={11} /> В корзину
                       </button>
                     </div>
                   </div>

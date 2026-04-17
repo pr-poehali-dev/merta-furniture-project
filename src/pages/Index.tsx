@@ -1184,15 +1184,15 @@ export default function Index() {
       {cartOpen && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50" onClick={() => setCartOpen(false)} />
-          <div className="absolute top-0 bottom-0 left-0 right-0 bg-white flex flex-col md:left-auto md:right-0 md:w-96">
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl flex flex-col max-h-[70svh] md:top-0 md:bottom-0 md:left-auto md:right-0 md:w-96 md:max-h-full md:rounded-none">
             {/* Handle — mobile only */}
             <div className="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
               <div className="w-8 h-1 bg-[#ddd] rounded-full" />
             </div>
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#eee]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#eee] flex-shrink-0">
               <div className="flex items-center gap-2">
-                <span className="font-display text-xl font-light">Корзина</span>
+                <span className="font-display text-lg font-light">Корзина</span>
                 {cartCount > 0 && (
                   <span className="bg-[#111] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">{cartCount}</span>
                 )}
@@ -1203,31 +1203,31 @@ export default function Index() {
                     Очистить
                   </button>
                 )}
-                <button onClick={() => setCartOpen(false)}>
-                  <Icon name="X" size={20} />
+                <button onClick={() => setCartOpen(false)} className="p-1">
+                  <Icon name="X" size={18} />
                 </button>
               </div>
             </div>
 
             {/* Items */}
-            <div className="flex-1 overflow-y-auto px-5 py-4">
+            <div className="flex-1 overflow-y-auto px-4 py-3">
               {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-[#ccc] gap-3">
-                  <Icon name="ShoppingBag" size={36} />
+                <div className="flex flex-col items-center justify-center h-full text-[#ccc] gap-3 py-6">
+                  <Icon name="ShoppingBag" size={28} />
                   <p className="text-[11px] tracking-widest uppercase">Корзина пуста</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {cart.map((item) => (
-                    <div key={item.id} className="flex gap-3 items-center border-b border-[#f5f5f5] pb-4">
-                      <img src={item.img} alt={item.name} className="w-14 h-14 object-cover bg-[#eee] flex-shrink-0 rounded" />
+                    <div key={item.id} className="flex gap-3 items-center border-b border-[#f5f5f5] pb-3">
+                      <img src={item.img} alt={item.name} className="w-11 h-11 object-cover bg-[#eee] flex-shrink-0 rounded" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium leading-tight truncate">{item.name}</p>
+                        <p className="text-xs font-medium leading-tight truncate">{item.name}</p>
                         <p className="text-[10px] text-[#999] mt-0.5">{item.category}</p>
-                        <p className="text-sm font-semibold mt-1">{formatPrice(item.price * item.qty)}</p>
+                        <p className="text-xs font-semibold mt-0.5">{formatPrice(item.price * item.qty)}</p>
                       </div>
                       <button onClick={() => removeFromCart(item.id)} className="text-[#ccc] hover:text-[#111] transition-colors p-1 flex-shrink-0">
-                        <Icon name="Trash2" size={15} />
+                        <Icon name="Trash2" size={13} />
                       </button>
                     </div>
                   ))}
@@ -1236,21 +1236,21 @@ export default function Index() {
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-[#eee] flex-shrink-0" style={{paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'}}>
+            <div className="px-4 py-3 border-t border-[#eee] flex-shrink-0" style={{paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'}}>
               {cart.length > 0 && (
                 <>
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-[11px] tracking-widest uppercase text-[#999]">Итого</span>
-                    <span className="font-display text-xl">{formatPrice(cartTotal)}</span>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-[10px] tracking-widest uppercase text-[#999]">Итого</span>
+                    <span className="font-display text-lg">{formatPrice(cartTotal)}</span>
                   </div>
-                  <button className="w-full bg-[#111] text-white py-3.5 text-[11px] tracking-widest uppercase hover:bg-[#333] transition-colors mb-3">
+                  <button className="w-full bg-[#111] text-white py-3 text-[10px] tracking-widest uppercase hover:bg-[#333] transition-colors mb-2">
                     Оформить заказ
                   </button>
                 </>
               )}
               <button
                 onClick={() => setCartOpen(false)}
-                className="w-full border border-[#ddd] py-3 text-[11px] tracking-widest uppercase text-[#999] hover:border-[#111] hover:text-[#111] transition-colors"
+                className="w-full border border-[#ddd] py-2.5 text-[10px] tracking-widest uppercase text-[#999] hover:border-[#111] hover:text-[#111] transition-colors"
               >
                 Закрыть
               </button>

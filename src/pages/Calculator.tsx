@@ -282,10 +282,11 @@ export default function Calculator() {
       {/* ── CALCULATOR BODY ── */}
       <div className="max-w-7xl mx-auto px-5 md:px-10 py-16">
         {!calcDone ? (
+          <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
             {/* Form */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 pb-24 lg:pb-0">
               {/* Progress */}
               <div className="flex items-center gap-0 mb-10 overflow-x-auto pb-2">
                 {stepLabels.map((label, i) => (
@@ -366,7 +367,7 @@ export default function Calculator() {
                       <button
                         key={m.id}
                         onClick={() => { setCalcMaterial(m.id); setCalcStep(3); }}
-                        className={`flex items-center justify-between p-5 border-2 transition-all duration-200 hover:border-[#111] text-left ${
+                        className={`flex items-center justify-between p-3 sm:p-5 border-2 transition-all duration-200 hover:border-[#111] text-left ${
                           calcMaterial === m.id ? "border-[#111] bg-[#111] text-white" : "border-[#e5e5e5] bg-white"
                         }`}
                       >
@@ -474,7 +475,7 @@ export default function Calculator() {
             </div>
 
             {/* Sidebar — live summary */}
-            <div className="bg-[#111] text-white p-8 self-start sticky top-20">
+            <div className="hidden lg:block bg-[#111] text-white p-8 self-start sticky top-20">
               <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-3">Предварительная стоимость</p>
               <div className="font-display text-4xl font-light mb-1">
                 {calcType ? formatPrice(calcPrice()) : "—"}
@@ -515,12 +516,23 @@ export default function Calculator() {
             </div>
           </div>
 
+          {/* Mobile price bar */}
+          {calcType && (
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#111] text-white px-5 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-[9px] tracking-[0.2em] uppercase text-white/40">Стоимость</p>
+                <p className="font-display text-2xl font-light">{formatPrice(calcPrice())}</p>
+              </div>
+              <p className="text-white/30 text-[10px]">уточняется при замере</p>
+            </div>
+          )}
+          </>
         ) : (
           /* ── RESULT ── */
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-[#111] text-white p-10 md:p-14">
+            <div className="bg-[#111] text-white p-5 md:p-10 lg:p-14">
               <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-5">Итоговая стоимость</p>
-              <div className="font-display text-6xl md:text-7xl font-light leading-none mb-2">
+              <div className="font-display text-4xl sm:text-6xl md:text-7xl font-light leading-none mb-2">
                 {formatPrice(calcPrice())}
               </div>
               <p className="text-white/30 text-sm mb-10">Цена ориентировочная, уточняется при замере</p>
@@ -555,7 +567,7 @@ export default function Calculator() {
             </div>
 
             <div className="flex flex-col gap-4">
-              <div className="bg-white border border-[#e8e8e8] p-8 flex-1">
+              <div className="bg-white border border-[#e8e8e8] p-5 sm:p-8 flex-1">
                 <Icon name="CheckCircle" size={32} className="text-[#111] mb-4" />
                 <h3 className="font-display text-2xl font-light mb-4">Что входит в стоимость?</h3>
                 <ul className="space-y-3 text-[13px] text-[#555]">

@@ -488,7 +488,7 @@ export default function Index() {
               </div>
               <button
                 onClick={() => addToCart(p)}
-                className="w-full border border-[#111] py-2.5 text-[11px] tracking-widest uppercase hover:bg-[#111] hover:text-white transition-colors duration-300"
+                className="w-full border border-[#111] py-3 text-[11px] tracking-widest uppercase hover:bg-[#111] hover:text-white transition-colors duration-300"
               >
                 В корзину
               </button>
@@ -508,7 +508,7 @@ export default function Index() {
           {/* Filters */}
           <div className="bg-white p-6 md:p-8 mb-10 border border-[#e8e8e8]">
             <p className="text-[10px] tracking-[0.3em] uppercase text-[#bbb] mb-6">Фильтр товаров</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
               <div>
                 <p className="text-[11px] tracking-widest uppercase mb-3 font-semibold">Тип мебели</p>
                 <div className="flex flex-wrap gap-2">
@@ -516,7 +516,7 @@ export default function Index() {
                     <button
                       key={c}
                       onClick={() => setFilterCategory(c)}
-                      className={`px-3 py-1.5 text-[11px] tracking-wider border transition-colors ${
+                      className={`px-3 py-2 text-[11px] tracking-wider border transition-colors ${
                         filterCategory === c
                           ? "bg-[#111] text-white border-[#111]"
                           : "border-[#ddd] text-[#555] hover:border-[#111]"
@@ -535,7 +535,7 @@ export default function Index() {
                     <button
                       key={m}
                       onClick={() => setFilterMaterial(m)}
-                      className={`px-3 py-1.5 text-[11px] tracking-wider border transition-colors ${
+                      className={`px-3 py-2 text-[11px] tracking-wider border transition-colors ${
                         filterMaterial === m
                           ? "bg-[#111] text-white border-[#111]"
                           : "border-[#ddd] text-[#555] hover:border-[#111]"
@@ -594,7 +594,7 @@ export default function Index() {
                       <p className="font-body font-semibold text-sm">от {formatPrice(p.price)}</p>
                       <button
                         onClick={() => addToCart(p)}
-                        className="flex items-center gap-1.5 text-[11px] tracking-wider uppercase border border-[#111] px-3 py-1.5 hover:bg-[#111] hover:text-white transition-colors duration-300"
+                        className="flex items-center gap-1.5 text-[11px] tracking-wider uppercase border border-[#111] px-3 py-2.5 hover:bg-[#111] hover:text-white transition-colors duration-300"
                       >
                         <Icon name="Plus" size={12} /> В корзину
                       </button>
@@ -1035,7 +1035,7 @@ export default function Index() {
       {cartOpen && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50" onClick={() => setCartOpen(false)} />
-          <div className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white cart-open flex flex-col">
+          <div className="absolute right-0 top-0 bottom-0 w-full sm:max-w-md bg-white cart-open flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-[#eee]">
               <h3 className="font-display text-2xl font-light">Корзина</h3>
               <button onClick={() => setCartOpen(false)}>
